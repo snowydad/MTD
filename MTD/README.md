@@ -13,7 +13,7 @@
 
 | Параметр              | Значение          |
 |-----------------------|-------------------|
-| Viewport              | 720 × 1280        |
+| Viewport              | 1125 × 2436        |
 | Stretch Mode          | canvas_items      |
 | Stretch Aspect        | expand            |
 | Orientation           | Portrait          |
@@ -29,9 +29,9 @@ MTD/
 │   │   └── main.tscn
 │   └── scripts/
 │       └── main.gd
-├── data/
-│   └── unit_stats.gd
 ├── assets/
+│   ├── data/
+│   │   └── unit_stats.gd   # статы юнитов (позже .tres)
 │   ├── sprites/
 │   │   ├── background/     # bg_field.png
 │   │   ├── wall/           # wall.png (стена внизу)
