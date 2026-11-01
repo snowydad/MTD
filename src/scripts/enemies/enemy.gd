@@ -9,7 +9,7 @@ extends Node2D
 @export var damage_to_wall: float = 5.0
 
 @export_group("Zigzag")
-@export var zigzag_amplitude: float = 40.0
+@export var zigzag_amplitude: float = 30.0
 @export var zigzag_frequency: float = 2.0
 
 var hp: float = 30.0

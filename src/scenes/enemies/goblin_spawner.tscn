@@ -6,3 +6,4 @@
 [node name="GoblinSpawner" type="Node2D" unique_id=1609692534]
 script = ExtResource("1_spawner")
 enemy_scene = ExtResource("2_goblin")
+spawn_x_min = 30.0
