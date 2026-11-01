@@ -6,6 +6,9 @@
 [node name="Archer" type="Node2D"]
 script = ExtResource("1_unit")
 unit_type = 0
+gravity = 3200.0
+jump_duration = 0.55
+shift_duration = 0.28
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_tex")

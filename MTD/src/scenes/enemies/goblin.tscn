@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://cgoblin001"]
+
+[ext_resource type="Script" uid="uid://l5gvo6ju3fi" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
+[ext_resource type="Texture2D" uid="uid://h8ffh0wyon5g" path="res://assets/sprites/enemies/goblin.png" id="2_tex"]
+
+[node name="Goblin" type="Node2D" unique_id=1155131527]
+script = ExtResource("1_enemy")
+move_speed = 100.0
+zigzag_amplitude = 20.0
+zigzag_frequency = 0.25
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=48937292]
+texture = ExtResource("2_tex")

@@ -14,17 +14,11 @@ const ARCHER_SCENE := preload("res://src/scenes/units/archer.tscn")
 
 var units: Array[Unit] = []
 
-## --- Формация (видно в инспекторе у Main) ---
+## --- Формация (крутить здесь) ---
 @export_group("Formation")
 @export var wall_y: float = 2070.0
 @export var slot_spacing: float = 120.0
 @export var max_units: int = 9
-
-## --- Прыжок по умолчанию (прокидывается в юнита при спавне) ---
-@export_group("Jump Defaults")
-@export var gravity: float = 3200.0
-@export var jump_duration: float = 0.55
-@export var shift_duration: float = 0.28
 
 
 func _ready() -> void:
@@ -51,11 +45,7 @@ func _on_spawn_pressed(unit_type: Unit.UnitType) -> void:
 func _spawn_unit(unit_type: Unit.UnitType) -> void:
 	var unit: Unit = ARCHER_SCENE.instantiate()
 	unit.setup(unit_type, 1)
-
-	# Прокидываем настройки прыжка из Main
-	unit.gravity = gravity
-	unit.jump_duration = jump_duration
-	unit.shift_duration = shift_duration
+	# Прыжок берётся из настроек сцены юнита (archer.tscn), не перезаписываем
 
 	units_root.add_child(unit)
 	units.append(unit)
@@ -74,7 +64,9 @@ func _spawn_unit(unit_type: Unit.UnitType) -> void:
 	unit.slot_index = new_idx
 	unit.play_spawn_jump(from_global, slots[new_idx])
 
-	print("Spawned archer #", units.size())
+	print("Spawned archer #", units.size(),
+		" | gravity=", unit.gravity,
+		" duration=", unit.jump_duration)
 
 
 func _compute_slots(count: int) -> Array[Vector2]:
