@@ -24,8 +24,8 @@ static func get_base(type: UnitType) -> Dictionary:
 		UnitType.ARCHER:
 			return {
 				"damage": 12.0,
-				"attack_speed": 1.8,
-				"range": 350.0,
+				"attack_speed": 0.5,
+				"range": 700.0,
 				"splash_radius": 0.0,
 			}
 		UnitType.MAGE:

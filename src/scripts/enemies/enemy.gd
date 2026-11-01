@@ -24,13 +24,19 @@ signal died(enemy: Enemy)
 @onready var sprite: Sprite2D = $Sprite2D
 
 
+func _ready() -> void:
+	add_to_group("enemies")
+
+
 func setup(spawn_pos: Vector2, target_y: float) -> void:
 	global_position = spawn_pos
 	_base_x = spawn_pos.x
 	_target_y = target_y
 	hp = max_hp
 	_alive = true
-	_time = randf() * TAU  # разный фазовый сдвиг зигзага
+	_time = randf() * TAU
+	if not is_in_group("enemies"):
+		add_to_group("enemies")
 
 
 func _process(delta: float) -> void:
@@ -38,14 +44,9 @@ func _process(delta: float) -> void:
 		return
 
 	_time += delta
-
-	# Движение вниз
 	var pos := global_position
 	pos.y += move_speed * delta
-
-	# Зигзаг по X вокруг базовой линии
 	pos.x = _base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude
-
 	global_position = pos
 
 	if global_position.y >= _target_y:

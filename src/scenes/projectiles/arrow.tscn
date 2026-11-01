@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://carrow001"]
+
+[ext_resource type="Script" path="res://src/scripts/projectiles/projectile.gd" id="1_proj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/units/archer/arrow.png" id="2_tex"]
+
+[node name="Arrow" type="Node2D"]
+z_index = 40
+script = ExtResource("1_proj")
+gravity = 1800.0
+hit_radius = 28.0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
