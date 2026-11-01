@@ -1,6 +1,7 @@
 extends Node2D
 
-## Main — спавн юнитов, динамическая формация на стене.
+## Main — юниты / формация.
+## Спавн врагов настраивается на ноде World/Enemies/GoblinSpawner (не здесь).
 
 @onready var wave_label: Label = $UI/HUD/TopBar/WaveLabel
 @onready var btn_archer: Button = $UI/HUD/BottomBar/BtnArcher
@@ -14,7 +15,6 @@ const ARCHER_SCENE := preload("res://src/scenes/units/archer.tscn")
 
 var units: Array[Unit] = []
 
-## --- Формация (крутить здесь) ---
 @export_group("Formation")
 @export var wall_y: float = 2070.0
 @export var slot_spacing: float = 120.0
@@ -34,27 +34,21 @@ func _on_spawn_pressed(unit_type: Unit.UnitType) -> void:
 	if units.size() >= max_units:
 		print("Стена заполнена")
 		return
-
 	if unit_type != Unit.UnitType.ARCHER:
 		print("Пока только лучник")
 		return
-
 	_spawn_unit(unit_type)
 
 
 func _spawn_unit(unit_type: Unit.UnitType) -> void:
 	var unit: Unit = ARCHER_SCENE.instantiate()
 	unit.setup(unit_type, 1)
-	# Прыжок берётся из настроек сцены юнита (archer.tscn), не перезаписываем
-
 	units_root.add_child(unit)
 	units.append(unit)
 
 	var slots := _compute_slots(units.size())
-
 	var btn := _button_for_type(unit_type)
 	var from_global: Vector2 = btn.get_global_rect().get_center()
-
 	var new_idx := units.size() - 1
 
 	for i in range(units.size() - 1):
@@ -63,24 +57,18 @@ func _spawn_unit(unit_type: Unit.UnitType) -> void:
 
 	unit.slot_index = new_idx
 	unit.play_spawn_jump(from_global, slots[new_idx])
-
-	print("Spawned archer #", units.size(),
-		" | gravity=", unit.gravity,
-		" duration=", unit.jump_duration)
+	print("Spawned archer #", units.size())
 
 
 func _compute_slots(count: int) -> Array[Vector2]:
 	var slots: Array[Vector2] = []
 	if count <= 0:
 		return slots
-
 	var total_width := (count - 1) * slot_spacing
 	var center_x := wall.position.x
 	var start_x := center_x - total_width * 0.5
-
 	for i in range(count):
 		slots.append(Vector2(start_x + i * slot_spacing, wall_y))
-
 	return slots
 
 

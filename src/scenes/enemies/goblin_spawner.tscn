@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://mweum0u6j34a"]
-
-[ext_resource type="Script" uid="uid://dtxd560hupcew" path="res://src/scripts/enemies/enemy_spawner.gd" id="1_spawner"]
-[ext_resource type="PackedScene" uid="uid://cgoblin001" path="res://src/scenes/enemies/goblin.tscn" id="2_goblin"]
-
-[node name="GoblinSpawner" type="Node2D" unique_id=1609692534]
-script = ExtResource("1_spawner")
-enemy_scene = ExtResource("2_goblin")
-spawn_x_min = 30.0

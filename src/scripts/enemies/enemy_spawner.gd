@@ -1,18 +1,19 @@
 class_name EnemySpawner
 extends Node2D
 
-## Спавнер одного типа врагов. Вешается на World/Enemies или отдельную ноду.
+## Цифры спавна — только в сцене (main.tscn → GoblinSpawner).
+## Дефолты в скрипте — запасные, если в tscn ничего не записано.
 
 @export var enemy_scene: PackedScene
 @export var target_y: float = 2070.0
 
 @export_group("Spawn")
 @export var auto_start: bool = true
-@export var spawn_interval: float = 3.2
-@export var spawn_count: int = -1          # -1 = бесконечно
+@export var spawn_interval: float = 1.0
+@export var spawn_count: int = -1
 @export var spawn_x_min: float = 300.0
 @export var spawn_x_max: float = 825.0
-@export var spawn_y: float = -50.0         # чуть выше экрана
+@export var spawn_y: float = -50.0
 
 var _timer: float = 0.0
 var _spawned: int = 0
@@ -24,13 +25,17 @@ signal enemy_died(enemy: Node2D)
 
 
 func _ready() -> void:
+	print("EnemySpawner ready: interval=", spawn_interval,
+		" x=[", spawn_x_min, "..", spawn_x_max, "]",
+		" scene=", enemy_scene)
 	if auto_start:
 		start()
 
 
 func start() -> void:
 	_running = true
-	_timer = 0.0
+	_spawned = 0
+	_timer = spawn_interval
 
 
 func stop() -> void:
@@ -56,21 +61,16 @@ func _spawn_one() -> void:
 	var enemy: Enemy = enemy_scene.instantiate()
 	var x := randf_range(spawn_x_min, spawn_x_max)
 	var pos := Vector2(x, spawn_y)
-
-	# parent = этот спавнер (или можно add к Enemies root)
 	add_child(enemy)
 	enemy.setup(pos, target_y)
-
 	enemy.reached_wall.connect(_on_reached_wall)
 	enemy.died.connect(_on_died)
-
 	_spawned += 1
 	enemy_spawned.emit(enemy)
 
 
 func _on_reached_wall(enemy: Enemy) -> void:
 	enemy_reached_wall.emit(enemy)
-	# Урон стене пока просто лог — Main может подписаться
 	print("Goblin reached wall, dmg=", enemy.damage_to_wall)
 
 
