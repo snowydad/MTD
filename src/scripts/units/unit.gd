@@ -3,8 +3,11 @@ extends Node2D
 
 ## Базовый юнит на стене.
 ## Статы из UnitStats. После приземления ищет врагов и стреляет.
+## Мерж: 3 одинаковых → 1 следующего уровня.
 
 enum UnitType { ARCHER, MAGE, CANNON }
+
+signal landed(unit: Unit)
 
 @export var unit_type: UnitType = UnitType.ARCHER
 @export var level: int = 1
@@ -34,6 +37,11 @@ var _flight_max: float = 0.0
 var _landed: bool = false
 var _attack_cd: float = 0.0
 
+## Занят мержем (не брать в новую тройку). Во время паузы ещё стреляет.
+var merge_locked: bool = false
+## Сейчас съезжается — не атакует.
+var is_merging: bool = false
+
 @onready var sprite: Sprite2D = $Sprite2D
 
 
@@ -41,8 +49,9 @@ func setup(type: UnitType, lvl: int = 1) -> void:
 	unit_type = type
 	level = lvl
 	_apply_stats()
+	_apply_visual_level()
 	_landed = false
-	_attack_cd = 0.15  # чуть паузы после спавна
+	_attack_cd = 0.15
 
 
 func _apply_stats() -> void:
@@ -60,6 +69,28 @@ func _apply_stats() -> void:
 	for _i in range(level - 1):
 		damage *= UnitStats.MERGE_DAMAGE_MULT
 		attack_range *= UnitStats.MERGE_RANGE_MULT
+
+
+func _apply_visual_level() -> void:
+	if sprite == null:
+		return
+	# Пока нет отдельных спрайтов — масштаб + лёгкий tint
+	var s := 1.0 + (level - 1) * 0.28
+	sprite.scale = Vector2(s, s)
+	match level:
+		1:
+			sprite.modulate = Color.WHITE
+		2:
+			sprite.modulate = Color(1.15, 1.05, 0.75)  # тёплый «прокачанный»
+		_:
+			sprite.modulate = Color(1.25, 0.95, 0.55)
+
+
+func upgrade_to_level(new_level: int) -> void:
+	level = new_level
+	_apply_stats()
+	_apply_visual_level()
+	print("Unit upgraded → Lv.%d  dmg=%.1f  range=%.0f" % [level, damage, attack_range])
 
 
 func _to_stats_type(t: UnitType) -> UnitStats.UnitType:
@@ -98,9 +129,12 @@ func _process(delta: float) -> void:
 			global_position = target_global
 			z_index = 0
 			_landed = true
+			landed.emit(self)
 		return
 
 	if not _landed:
+		return
+	if is_merging:
 		return
 
 	_attack_cd -= delta
@@ -112,13 +146,17 @@ func _process(delta: float) -> void:
 
 
 func move_to_slot(to_global: Vector2) -> void:
-	if _flying:
+	if _flying or is_merging:
 		return
 	target_global = to_global
 	var tween := create_tween()
 	tween.set_ease(Tween.EASE_IN_OUT)
 	tween.set_trans(Tween.TRANS_QUAD)
 	tween.tween_property(self, "global_position", to_global, shift_duration)
+
+
+func is_ready_on_wall() -> bool:
+	return _landed and not _flying and not merge_locked and not is_merging
 
 
 func _find_target() -> Enemy:
@@ -140,7 +178,6 @@ func _fire_at(target: Enemy) -> void:
 		push_warning("Unit: projectile_scene not set")
 		return
 	var arrow: Projectile = projectile_scene.instantiate()
-	# Снаряды в тот же World, что и юниты
 	var parent := get_parent()
 	while parent and parent.name != "World":
 		parent = parent.get_parent()

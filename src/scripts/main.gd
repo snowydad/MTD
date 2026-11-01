@@ -1,6 +1,6 @@
 extends Node2D
 
-## Main — юниты, формация, общий заряд кнопок, HP башни.
+## Main — юниты, формация, общий заряд, HP башни, мерж ×3.
 
 @onready var wave_label: Label = $UI/HUD/TopBar/WaveLabel
 @onready var btn_archer: Button = $UI/HUD/BottomBar/BtnArcher
@@ -21,7 +21,6 @@ var units: Array[Unit] = []
 @export var max_units: int = 9
 
 @export_group("Charge")
-## Скорость наполнения (единиц в секунду). Потом перки будут множить.
 @export var fill_rate: float = 10.0
 @export var cost_archer: int = 12
 @export var cost_mage: int = 16
@@ -30,10 +29,17 @@ var units: Array[Unit] = []
 @export_group("Tower")
 @export var tower_max_hp: float = 100.0
 
-## Общий заряд — растёт для всех кнопок сразу. После спавна сбрасывается в 0.
+@export_group("Merge")
+## Пауза после посадки 3-го юнита (могут стрелять).
+@export var merge_delay: float = 1.0
+## Время съезда в точку мержа.
+@export var merge_converge_time: float = 0.4
+
 var charge: float = 0.0
 var tower_hp: float = 100.0
 var _game_over: bool = false
+## Сколько мержей сейчас в процессе (чтобы не стартовать дважды одну тройку).
+var _merges_in_flight: int = 0
 
 
 func _ready() -> void:
@@ -48,7 +54,6 @@ func _ready() -> void:
 	btn_mage.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.MAGE))
 	btn_cannon.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.CANNON))
 
-	# Урон по стене, когда враг доходит
 	if goblin_spawner:
 		goblin_spawner.enemy_reached_wall.connect(_on_enemy_reached_wall)
 
@@ -65,6 +70,8 @@ func _process(delta: float) -> void:
 	_update_buttons()
 
 
+# ─── HP ───────────────────────────────────────────────────────────────────────
+
 func _setup_hp_bar() -> void:
 	tower_hp_bar.min_value = 0.0
 	tower_hp_bar.max_value = tower_max_hp
@@ -76,7 +83,6 @@ func _update_hp_bar() -> void:
 	tower_hp_bar.max_value = tower_max_hp
 	tower_hp_bar.value = clampf(tower_hp, 0.0, tower_max_hp)
 
-	# Цвет: зелёный → жёлтый → красный
 	var ratio := tower_hp / tower_max_hp if tower_max_hp > 0.0 else 0.0
 	var fill_style := StyleBoxFlat.new()
 	fill_style.bg_color = Color(0.2, 0.85, 0.3) if ratio > 0.5 \
@@ -109,15 +115,15 @@ func _on_enemy_reached_wall(enemy: Node2D) -> void:
 func _on_tower_destroyed() -> void:
 	_game_over = true
 	print("=== GAME OVER: стена разрушена ===")
-	# Останавливаем спавн
 	if goblin_spawner:
 		goblin_spawner.stop()
-	# Блокируем кнопки
 	btn_archer.disabled = true
 	btn_mage.disabled = true
 	btn_cannon.disabled = true
 	wave_label.text = "GAME OVER"
 
+
+# ─── Кнопки / спавн ───────────────────────────────────────────────────────────
 
 func _update_buttons() -> void:
 	if _game_over:
@@ -150,7 +156,6 @@ func _on_spawn_pressed(unit_type: Unit.UnitType) -> void:
 		print("Пока только лучник")
 		return
 
-	# Спавн + сброс общего заряда (как в GDD: нажал — все полоски с нуля)
 	charge = 0.0
 	_update_buttons()
 	_spawn_unit(unit_type)
@@ -172,6 +177,7 @@ func _spawn_unit(unit_type: Unit.UnitType) -> void:
 	unit.setup(unit_type, 1)
 	units_root.add_child(unit)
 	units.append(unit)
+	unit.landed.connect(_on_unit_landed)
 
 	var slots := _compute_slots(units.size())
 	var btn := _button_for_type(unit_type)
@@ -186,6 +192,135 @@ func _spawn_unit(unit_type: Unit.UnitType) -> void:
 	unit.play_spawn_jump(from_global, slots[new_idx])
 	print("Spawned archer #", units.size())
 
+
+func _on_unit_landed(_unit: Unit) -> void:
+	# После посадки любого юнита проверяем, есть ли тройка для мержа
+	_try_merge()
+
+
+# ─── Merge ×3 ─────────────────────────────────────────────────────────────────
+
+func _try_merge() -> void:
+	if _game_over:
+		return
+
+	# Ищем первую тройку: один тип + один уровень, все уже на стене
+	var groups: Dictionary = {}  # key "type_level" → Array[Unit]
+	for u in units:
+		if not is_instance_valid(u):
+			continue
+		if not u.is_ready_on_wall():
+			continue
+		var key := "%d_%d" % [u.unit_type, u.level]
+		if not groups.has(key):
+			groups[key] = [] as Array[Unit]
+		groups[key].append(u)
+
+	for key in groups:
+		var group: Array = groups[key]
+		while group.size() >= 3:
+			var triple: Array[Unit] = [group[0], group[1], group[2]]
+			group.remove_at(0)
+			group.remove_at(0)
+			group.remove_at(0)
+			# Сразу лочим — в новую тройку не попадут, но ещё стреляют
+			for u in triple:
+				u.merge_locked = true
+			_merges_in_flight += 1
+			_run_merge(triple)
+			# один мерж за вызов; остальные подхватятся после
+			return
+
+
+func _run_merge(triple: Array[Unit]) -> void:
+	# 1 сек пауза — юниты продолжают стрелять
+	await get_tree().create_timer(merge_delay).timeout
+
+	if _game_over:
+		_merges_in_flight -= 1
+		return
+
+	var alive: Array[Unit] = []
+	for u in triple:
+		if is_instance_valid(u):
+			alive.append(u)
+	if alive.size() < 3:
+		for u in alive:
+			u.merge_locked = false
+			u.is_merging = false
+		_merges_in_flight -= 1
+		_try_merge()
+		return
+
+	# Съезд — атака выключается
+	var center := Vector2.ZERO
+	for u in alive:
+		u.is_merging = true
+		center += u.global_position
+	center /= float(alive.size())
+
+	var tweens_done := 0
+	var total := alive.size()
+	for u in alive:
+		var tw := create_tween()
+		tw.set_ease(Tween.EASE_IN)
+		tw.set_trans(Tween.TRANS_BACK)
+		tw.tween_property(u, "global_position", center, merge_converge_time)
+		tw.finished.connect(func():
+			tweens_done += 1
+		)
+
+	# Ждём съезд
+	await get_tree().create_timer(merge_converge_time + 0.05).timeout
+
+	if _game_over:
+		_merges_in_flight -= 1
+		return
+
+	# Выживший — первый, остальные удаляем
+	var survivor: Unit = alive[0]
+	var new_level := survivor.level + 1
+
+	for i in range(1, alive.size()):
+		var dying := alive[i]
+		units.erase(dying)
+		dying.queue_free()
+
+	survivor.upgrade_to_level(new_level)
+	survivor.merge_locked = false
+	survivor.is_merging = false
+	survivor.target_global = center
+	# Лёгкий «попап» масштаба
+	if survivor.sprite:
+		var base_scale := survivor.sprite.scale
+		survivor.sprite.scale = base_scale * 1.35
+		var pop := create_tween()
+		pop.tween_property(survivor.sprite, "scale", base_scale, 0.2).set_ease(Tween.EASE_OUT)
+
+	print("MERGE → %s Lv.%d  (осталось юнитов: %d)" % [
+		Unit.UnitType.keys()[survivor.unit_type], survivor.level, units.size()
+	])
+
+	_reform_formation()
+	_merges_in_flight -= 1
+
+	# Возможно, после мержа снова есть тройка (например 6 лучников)
+	_try_merge()
+
+
+func _reform_formation() -> void:
+	# Чистим мёртвые ссылки
+	units = units.filter(func(u: Unit) -> bool: return is_instance_valid(u))
+
+	var slots := _compute_slots(units.size())
+	for i in range(units.size()):
+		units[i].slot_index = i
+		if not units[i].merge_locked:
+			units[i].is_merging = false
+		units[i].move_to_slot(slots[i])
+
+
+# ─── Формация ─────────────────────────────────────────────────────────────────
 
 func _compute_slots(count: int) -> Array[Vector2]:
 	var slots: Array[Vector2] = []
