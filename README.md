@@ -1,17 +1,13 @@
 # MTD — Merge Tower Defense
 
-2D Tower Defense с механикой авто-слияния юнитов.  
-Прототип на **Godot 4**.
+A 2D tower defense game with auto-merge mechanics.
+A prototype built in **Godot 4**.
 
-## Быстрый старт
 
-1. Склонируй репозиторий
-2. Открой папку в Godot 4.3+ (или 4.2+)
-3. Нажми F5 / Play
 
-## Настройки экрана (уже прописаны)
+## Screen Settings (already configured)
 
-| Параметр              | Значение          |
+| Setting              | Value          |
 |-----------------------|-------------------|
 | Viewport              | 1125 × 2436        |
 | Stretch Mode          | canvas_items      |
@@ -19,7 +15,7 @@
 | Orientation           | Portrait          |
 | Renderer              | Mobile            |
 
-## Структура проекта
+## Project structure
 
 ```
 MTD/
@@ -31,10 +27,10 @@ MTD/
 │       └── main.gd
 ├── assets/
 │   ├── data/
-│   │   └── unit_stats.gd   # статы юнитов (позже .tres)
+│   │   └── unit_stats.gd   # units' stats ( .tres later)
 │   ├── sprites/
 │   │   ├── background/     # bg_field.png
-│   │   ├── wall/           # wall.png (стена внизу)
+│   │   ├── wall/           # wall.png (tower at the bottom)
 │   │   ├── enemies/        # goblin.png
 │   │   ├── units/
 │   │   │   ├── archer/
@@ -51,27 +47,27 @@ MTD/
 └── autoload/
 ```
 
-## Текущие плейсхолдеры (замени своими)
+## Placeholders (replace later)
 
-| Файл | Назначение |
+| File | Purpose |
 |------|------------|
-| `assets/sprites/background/bg_field.png` | Фон поля |
-| `assets/sprites/wall/wall.png` | Стена (башня) внизу |
-| `assets/sprites/enemies/goblin.png` | Гоблин |
-| `assets/sprites/units/*/..._1.png` | Юниты 1 уровня (на будущее) |
+| `assets/sprites/background/bg_field.png` | Back |
+| `assets/sprites/wall/wall.png` | (tower at the bottom) |
+| `assets/sprites/enemies/goblin.png` | Goblin |
+| `assets/sprites/units/*/..._1.png` | level_1 units|
 
 ## Текущий статус
 
-- [x] Базовый project.godot + разрешение
-- [x] Каркас main-сцены (HUD + кнопки)
-- [x] Структура ассетов + плейсхолдеры (bg, wall, goblin)
-- [x] Сцены и скрипты перенесены в `src/`
-- [ ] Система энергии / прогресс-баров кнопок
-- [ ] Спавн юнитов + динамическое позиционирование
-- [ ] Авто-мерж ×3
-- [ ] Враги + спавнеры
-- [ ] Волны + перки
+- [x] Basic project.godot + resolution
+- [x] Main scene framework (HUD + buttons)
+- [x] Asset structure + placeholders (bg, wall, goblin)
+- [x] Scenes and scripts moved to `src/`
+- [ ] Energy system / button progress bars
+- [ ] Unit spawning + dynamic positioning
+- [ ] Auto-merge ×3
+- [ ] Enemies + spawners
+- [ ] Waves + perks
 
 ## GDD
 
-См. Google Doc (GDD Lite v3).
+See Google Doc (GDD Lite v3).
