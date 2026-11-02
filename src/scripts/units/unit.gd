@@ -70,6 +70,17 @@ func _apply_stats() -> void:
 		damage *= UnitStats.MERGE_DAMAGE_MULT
 		attack_range *= UnitStats.MERGE_RANGE_MULT
 
+	# Глобальные перки (с Main). setup() может вызываться до add_child → tree == null
+	var tree := get_tree()
+	if tree == null:
+		return
+	var main := tree.get_first_node_in_group("game_main") as Node
+	if main != null and main.has_method("get_perk_multipliers"):
+		var m: Dictionary = main.get_perk_multipliers()
+		damage *= float(m.get("damage", 1.0))
+		attack_range *= float(m.get("range", 1.0))
+		attack_speed *= float(m.get("speed", 1.0))
+
 
 func _apply_visual_level() -> void:
 	if sprite == null:

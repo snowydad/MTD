@@ -7,6 +7,7 @@ extends Node2D
 @export var max_hp: float = 30.0
 @export var move_speed: float = 180.0
 @export var damage_to_wall: float = 5.0
+@export var gold_reward: int = 10
 
 @export_group("Zigzag")
 @export var zigzag_amplitude: float = 40.0

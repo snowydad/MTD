@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bb1i6l3ij2i12"
+
+[deps]
+
+files=["res://assets/data/enemies.max.translation", "res://assets/data/enemies.move.translation", "res://assets/data/enemies.damage.translation", "res://assets/data/enemies.gold.translation", "res://assets/data/enemies.zigzag.translation", "res://assets/data/enemies.zigzag.translation"]
+
+source_file="res://assets/data/enemies.csv"
+dest_files=["res://assets/data/enemies.max.translation", "res://assets/data/enemies.move.translation", "res://assets/data/enemies.damage.translation", "res://assets/data/enemies.gold.translation", "res://assets/data/enemies.zigzag.translation", "res://assets/data/enemies.zigzag.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

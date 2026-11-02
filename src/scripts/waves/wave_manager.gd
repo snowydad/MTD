@@ -124,10 +124,13 @@ func _spawn_enemy(etype: String) -> void:
 		return
 
 	var enemy: Enemy = scene.instantiate()
+	GameData.apply_to_enemy(enemy, etype)
 	var x := randf_range(x_min, x_max)
 	var pos := Vector2(x, spawn_y)
 	_spawn_parent.add_child(enemy)
 	enemy.setup(pos, target_y)
+	# setup сбрасывает hp из max_hp — данные уже на enemy
+	enemy.hp = enemy.max_hp
 	enemy.reached_wall.connect(_on_enemy_resolved)
 	enemy.died.connect(_on_enemy_resolved)
 	_spawned += 1

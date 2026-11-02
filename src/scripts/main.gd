@@ -3,10 +3,15 @@ extends Node2D
 ## Main — юниты, формация, общий заряд, HP башни, мерж ×3.
 
 @onready var wave_label: Label = $UI/HUD/TopBar/WaveLabel
+@onready var gold_label: Label = $UI/HUD/GoldLabel
 @onready var btn_archer: Button = $UI/HUD/BottomBar/BtnArcher
 @onready var btn_mage: Button = $UI/HUD/BottomBar/BtnMage
 @onready var btn_cannon: Button = $UI/HUD/BottomBar/BtnCannon
 @onready var tower_hp_bar: ProgressBar = $UI/HUD/TowerHP
+@onready var perk_panel: HBoxContainer = $UI/HUD/PerkPanel
+@onready var btn_perk_range: Button = $UI/HUD/PerkPanel/BtnPerkRange
+@onready var btn_perk_speed: Button = $UI/HUD/PerkPanel/BtnPerkSpeed
+@onready var btn_perk_damage: Button = $UI/HUD/PerkPanel/BtnPerkDamage
 @onready var units_root: Node2D = $World/Units
 @onready var wall: Sprite2D = $World/Wall
 @onready var wave_manager: WaveManager = $World/WaveManager
@@ -30,29 +35,47 @@ var units: Array[Unit] = []
 @export var tower_max_hp: float = 100.0
 
 @export_group("Merge")
-## Пауза после посадки 3-го юнита (могут стрелять).
 @export var merge_delay: float = 1.0
-## Время съезда в точку мержа.
 @export var merge_converge_time: float = 0.4
 
 var charge: float = 0.0
 var tower_hp: float = 100.0
+var gold: int = 0
 var _game_over: bool = false
-## Сколько мержей сейчас в процессе (чтобы не стартовать дважды одну тройку).
 var _merges_in_flight: int = 0
+var _perk_panel_open: bool = false
+
+## Множители перков (стакаются). Числа — из assets/data/economy.csv
+var perk_cost: int = 50
+var perk_bonus: float = 0.15
+var perk_damage: float = 1.0
+var perk_range: float = 1.0
+var perk_speed: float = 1.0
 
 
 func _ready() -> void:
+	add_to_group("game_main")
 	print("MTD Prototype started")
 	print("Viewport size: ", get_viewport().get_visible_rect().size)
+
+	GameData.reload()
+	perk_cost = GameData.perk_cost()
+	perk_bonus = GameData.perk_bonus()
+	_update_perk_button_labels()
 
 	tower_hp = tower_max_hp
 	_setup_hp_bar()
 	_update_hp_bar()
+	_update_gold_label()
+	perk_panel.visible = false
 
 	btn_archer.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.ARCHER))
 	btn_mage.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.MAGE))
 	btn_cannon.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.CANNON))
+
+	btn_perk_range.pressed.connect(_on_perk_chosen.bind("range"))
+	btn_perk_speed.pressed.connect(_on_perk_chosen.bind("speed"))
+	btn_perk_damage.pressed.connect(_on_perk_chosen.bind("damage"))
 
 	if wave_manager:
 		wave_manager.wave_started.connect(_on_wave_started)
@@ -61,7 +84,6 @@ func _ready() -> void:
 		wave_manager.all_waves_complete.connect(_on_all_waves_complete)
 
 	_update_buttons()
-	# Урон стене: каждый новый враг в World/Enemies
 	var enemies_root := $World/Enemies
 	enemies_root.child_entered_tree.connect(_on_enemy_spawned_for_damage)
 
@@ -135,6 +157,79 @@ func _on_enemy_spawned_for_damage(node: Node) -> void:
 		return
 	if not e.reached_wall.is_connected(_on_enemy_reached_wall):
 		e.reached_wall.connect(_on_enemy_reached_wall)
+	if not e.died.is_connected(_on_enemy_died):
+		e.died.connect(_on_enemy_died)
+
+
+func _on_enemy_died(enemy: Enemy) -> void:
+	if _game_over or enemy == null:
+		return
+	gold += enemy.gold_reward
+	_update_gold_label()
+	_try_show_perks()
+
+
+func _update_gold_label() -> void:
+	if gold_label:
+		gold_label.text = str(gold)
+
+
+func _update_perk_button_labels() -> void:
+	var pct := int(round(perk_bonus * 100.0))
+	btn_perk_range.text = "Range\n+%d%%" % pct
+	btn_perk_speed.text = "Speed\n+%d%%" % pct
+	btn_perk_damage.text = "Damage\n+%d%%" % pct
+
+
+func get_perk_multipliers() -> Dictionary:
+	return {
+		"damage": perk_damage,
+		"range": perk_range,
+		"speed": perk_speed,
+	}
+
+
+func _try_show_perks() -> void:
+	if _game_over or _perk_panel_open:
+		return
+	if gold < perk_cost:
+		return
+	_perk_panel_open = true
+	perk_panel.visible = true
+	# Можно чуть замедлить игру — пока просто панель поверх
+
+
+func _on_perk_chosen(kind: String) -> void:
+	if gold < perk_cost:
+		_hide_perks()
+		return
+	gold -= perk_cost
+	_update_gold_label()
+
+	match kind:
+		"range":
+			perk_range *= (1.0 + perk_bonus)
+		"speed":
+			perk_speed *= (1.0 + perk_bonus)
+		"damage":
+			perk_damage *= (1.0 + perk_bonus)
+
+	print("PERK ", kind, " → dmg=", perk_damage, " range=", perk_range, " speed=", perk_speed)
+	_refresh_all_unit_stats()
+	_hide_perks()
+	# Если золота ещё хватает — снова показать выбор
+	_try_show_perks()
+
+
+func _hide_perks() -> void:
+	_perk_panel_open = false
+	perk_panel.visible = false
+
+
+func _refresh_all_unit_stats() -> void:
+	for u in units:
+		if is_instance_valid(u):
+			u._apply_stats()
 
 
 func _on_wave_started(wave_index: int, wave_name: String) -> void:
@@ -207,8 +302,8 @@ func _cost_for(unit_type: Unit.UnitType) -> int:
 
 func _spawn_unit(unit_type: Unit.UnitType) -> void:
 	var unit: Unit = ARCHER_SCENE.instantiate()
-	unit.setup(unit_type, 1)
 	units_root.add_child(unit)
+	unit.setup(unit_type, 1)
 	units.append(unit)
 	unit.landed.connect(_on_unit_landed)
 
