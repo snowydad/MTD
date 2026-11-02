@@ -25,7 +25,7 @@ static func get_base(type: UnitType) -> Dictionary:
 			return {
 				"damage": 12.0,
 				"attack_speed": 0.5,
-				"range": 1000.0,
+				"range": 700.0,
 				"splash_radius": 0.0,
 			}
 		UnitType.MAGE:

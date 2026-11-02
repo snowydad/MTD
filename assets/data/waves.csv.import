@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://blnmf68x6i8y1"
+
+[deps]
+
+files=["res://assets/data/waves.name.translation", "res://assets/data/waves.subwave.translation", "res://assets/data/waves.type.translation", "res://assets/data/waves.delay.translation", "res://assets/data/waves.count.translation", "res://assets/data/waves.interval.translation"]
+
+source_file="res://assets/data/waves.csv"
+dest_files=["res://assets/data/waves.name.translation", "res://assets/data/waves.subwave.translation", "res://assets/data/waves.type.translation", "res://assets/data/waves.delay.translation", "res://assets/data/waves.count.translation", "res://assets/data/waves.interval.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

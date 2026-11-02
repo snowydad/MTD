@@ -9,8 +9,7 @@ extends Node2D
 @onready var tower_hp_bar: ProgressBar = $UI/HUD/TowerHP
 @onready var units_root: Node2D = $World/Units
 @onready var wall: Sprite2D = $World/Wall
-@onready var goblin_spawner: EnemySpawner = $World/Enemies/GoblinSpawner
-@onready var orc_spawner: EnemySpawner = $World/Enemies/OrcSpawner
+@onready var wave_manager: WaveManager = $World/WaveManager
 
 const ARCHER_SCENE := preload("res://src/scenes/units/archer.tscn")
 
@@ -55,12 +54,16 @@ func _ready() -> void:
 	btn_mage.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.MAGE))
 	btn_cannon.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.CANNON))
 
-	if goblin_spawner:
-		goblin_spawner.enemy_reached_wall.connect(_on_enemy_reached_wall)
-	if orc_spawner:
-		orc_spawner.enemy_reached_wall.connect(_on_enemy_reached_wall)
+	if wave_manager:
+		wave_manager.wave_started.connect(_on_wave_started)
+		wave_manager.wave_spawn_complete.connect(_on_wave_spawn_complete)
+		wave_manager.wave_cleared.connect(_on_wave_cleared)
+		wave_manager.all_waves_complete.connect(_on_all_waves_complete)
 
 	_update_buttons()
+	# Урон стене: каждый новый враг в World/Enemies
+	var enemies_root := $World/Enemies
+	enemies_root.child_entered_tree.connect(_on_enemy_spawned_for_damage)
 
 
 func _process(delta: float) -> void:
@@ -118,14 +121,39 @@ func _on_enemy_reached_wall(enemy: Node2D) -> void:
 func _on_tower_destroyed() -> void:
 	_game_over = true
 	print("=== GAME OVER: стена разрушена ===")
-	if goblin_spawner:
-		goblin_spawner.stop()
-	if orc_spawner:
-		orc_spawner.stop()
+	if wave_manager:
+		wave_manager.stop()
 	btn_archer.disabled = true
 	btn_mage.disabled = true
 	btn_cannon.disabled = true
 	wave_label.text = "GAME OVER"
+
+
+func _on_enemy_spawned_for_damage(node: Node) -> void:
+	var e := node as Enemy
+	if e == null:
+		return
+	if not e.reached_wall.is_connected(_on_enemy_reached_wall):
+		e.reached_wall.connect(_on_enemy_reached_wall)
+
+
+func _on_wave_started(wave_index: int, wave_name: String) -> void:
+	var total := WaveData.wave_count()
+	wave_label.text = "%s / %d" % [wave_name, total]
+	print("UI: ", wave_label.text)
+
+
+func _on_wave_spawn_complete(wave_index: int) -> void:
+	print("UI: spawn complete wave ", wave_index + 1)
+
+
+func _on_wave_cleared(wave_index: int) -> void:
+	print("UI: cleared wave ", wave_index + 1)
+
+
+func _on_all_waves_complete() -> void:
+	wave_label.text = "Победа!"
+	print("=== WIN ===")
 
 
 # ─── Кнопки / спавн ───────────────────────────────────────────────────────────

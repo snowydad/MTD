@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://corc001"]
+[gd_scene load_steps=3 format=3 uid="uid://corc001"]
 
 [ext_resource type="Script" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
 [ext_resource type="Texture2D" path="res://assets/sprites/enemies/orc.png" id="2_tex"]

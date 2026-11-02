@@ -1,0 +1,42 @@
+{
+  "waves": [
+    {
+      "id": 1,
+      "name": "Wave 1",
+      "subwaves": [
+        {
+          "id": "1.1",
+          "entries": [
+            { "type": "goblin", "delay": 0.0, "count": 10, "interval": 3.2 }
+          ]
+        },
+        {
+          "id": "1.2",
+          "entries": [
+            { "type": "goblin", "delay": 10.0, "count": 10, "interval": 2.0 },
+            { "type": "orc",    "delay": 11.0, "count": 5,  "interval": 6.0 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Wave 2",
+      "subwaves": [
+        {
+          "id": "2.1",
+          "entries": [
+            { "type": "goblin", "delay": 0.0, "count": 10, "interval": 3.2 }
+          ]
+        },
+        {
+          "id": "2.2",
+          "entries": [
+            { "type": "goblin", "delay": 10.0, "count": 10, "interval": 2.0 },
+            { "type": "orc",    "delay": 11.0, "count": 5,  "interval": 6.0 }
+          ]
+        }
+      ]
+    }
+  ]
+}
