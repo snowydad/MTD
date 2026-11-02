@@ -17,12 +17,11 @@ signal all_waves_complete
 @export var pause_between_waves: float = 2.0
 @export var auto_start: bool = true
 
-@export_group("Spawn X ranges")
-@export var goblin_x_min: float = 35.0
-@export var goblin_x_max: float = 1100.0
-@export var orc_x_min: float = 150.0
-@export var orc_x_max: float = 980.0
+## spawn_x_min/max — из waves.csv на текущую волну (пиксели)
 @export var spawn_y: float = -50.0
+
+var _wave_x_min: float = 35.0
+var _wave_x_max: float = 1100.0
 
 var current_wave_index: int = -1
 var _spawn_parent: Node2D
@@ -64,6 +63,8 @@ func _start_next_wave() -> void:
 	_spawn_done = false
 	_cleared = false
 	_entry_jobs_left = 0
+	_wave_x_min = float(wave.get("spawn_x_min", 35.0))
+	_wave_x_max = float(wave.get("spawn_x_max", 1100.0))
 
 	var wname: String = str(wave.get("name", "Wave %d" % (current_wave_index + 1)))
 	print("=== WAVE START: ", wname, " (enemies=", _planned, ") ===")
@@ -109,13 +110,9 @@ func _run_entry(entry: Dictionary) -> void:
 
 func _spawn_enemy(etype: String) -> void:
 	var scene: PackedScene = null
-	var x_min := goblin_x_min
-	var x_max := goblin_x_max
 	match etype:
 		"orc":
 			scene = orc_scene
-			x_min = orc_x_min
-			x_max = orc_x_max
 		_:
 			scene = goblin_scene
 
@@ -125,7 +122,7 @@ func _spawn_enemy(etype: String) -> void:
 
 	var enemy: Enemy = scene.instantiate()
 	GameData.apply_to_enemy(enemy, etype)
-	var x := randf_range(x_min, x_max)
+	var x := randf_range(_wave_x_min, _wave_x_max)
 	var pos := Vector2(x, spawn_y)
 	_spawn_parent.add_child(enemy)
 	enemy.setup(pos, target_y)

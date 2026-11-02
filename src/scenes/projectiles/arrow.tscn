@@ -1,13 +1,14 @@
-[gd_scene load_steps=3 format=3 uid="uid://carrow001"]
+[gd_scene format=3 uid="uid://carrow001"]
 
-[ext_resource type="Script" path="res://src/scripts/projectiles/projectile.gd" id="1_proj"]
-[ext_resource type="Texture2D" path="res://assets/sprites/units/archer/arrow.png" id="2_tex"]
+[ext_resource type="Script" uid="uid://dxw0apnukclw1" path="res://src/scripts/projectiles/projectile.gd" id="1_proj"]
+[ext_resource type="Texture2D" uid="uid://ffmx756vk25t" path="res://assets/sprites/units/archer/arrow.png" id="2_tex"]
 
-[node name="Arrow" type="Node2D"]
+[node name="Arrow" type="Node2D" unique_id=22934887]
 z_index = 40
 script = ExtResource("1_proj")
-gravity = 1800.0
-hit_radius = 28.0
+max_speed = 750.0
+lead_factor = 1.1
+peak_scale = 2.0
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=838512659]
 texture = ExtResource("2_tex")

@@ -1,7 +1,7 @@
-wave,name,subwave,type,delay,count,interval
-1,Wave 1,1.1,goblin,0,4,4
-1,Wave 1,1.2,goblin,19,4,4
-1,Wave 1,1.2,orc,20,2,7
-2,Wave 2,2.1,goblin,0,10,3.2
-2,Wave 2,2.2,goblin,10,10,2
-2,Wave 2,2.2,orc,11,5,6
+wave,name,subwave,type,delay,count,interval,spawn_x_min,spawn_x_max
+1,Wave 1,1.1,goblin,0,4,4,45,1080
+1,Wave 1,1.2,goblin,19,4,4,45,1080
+1,Wave 1,1.2,orc,20,2,7,55,1050
+2,Wave 2,2.1,goblin,0,4,4,35,1100
+2,Wave 2,2.2,goblin,19,4,4,35,1100
+2,Wave 2,2.2,orc,20,2,7,35,1100

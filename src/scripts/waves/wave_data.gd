@@ -2,8 +2,8 @@ class_name WaveData
 extends RefCounted
 
 ## Волны из assets/data/waves.csv
-## Колонки: wave, name, subwave, type, delay, count, interval
-## Одна строка = один spawn entry. Править в Excel / Google Sheets / блокноте.
+## Колонки: wave, name, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
+## spawn_x_* — в пикселях, на всю волну (берутся из первой строки волны).
 
 const WAVES_PATH := "res://assets/data/waves.csv"
 
@@ -32,7 +32,6 @@ static func _ensure_loaded() -> void:
 		push_error("WaveData: пустой CSV")
 		return
 
-	# wave_id → { id, name, subwaves_map }
 	var by_wave: Dictionary = {}
 
 	while not f.eof_reached():
@@ -51,12 +50,19 @@ static func _ensure_loaded() -> void:
 		var delay := float(cols[4])
 		var count := int(cols[5])
 		var interval := float(cols[6])
+		var x_min := 35.0
+		var x_max := 1100.0
+		if cols.size() >= 9:
+			x_min = float(cols[7])
+			x_max = float(cols[8])
 
 		if not by_wave.has(wid):
 			by_wave[wid] = {
 				"id": wid,
 				"name": wname,
-				"_subs": {},  # subwave_id → entries array
+				"spawn_x_min": x_min,
+				"spawn_x_max": x_max,
+				"_subs": {},
 			}
 		elif wname != "" and String(by_wave[wid]["name"]) == "":
 			by_wave[wid]["name"] = wname
@@ -73,7 +79,6 @@ static func _ensure_loaded() -> void:
 
 	f.close()
 
-	# Сортируем волны по id, сабволны — по id как строки
 	var ids: Array = by_wave.keys()
 	ids.sort()
 	for wid in ids:
@@ -90,6 +95,8 @@ static func _ensure_loaded() -> void:
 		_waves.append({
 			"id": int(w["id"]),
 			"name": str(w["name"]),
+			"spawn_x_min": float(w["spawn_x_min"]),
+			"spawn_x_max": float(w["spawn_x_max"]),
 			"subwaves": subwaves,
 		})
 
@@ -97,7 +104,6 @@ static func _ensure_loaded() -> void:
 
 
 static func _parse_csv_line(line: String) -> PackedStringArray:
-	# Простой CSV без кавычек в полях (нам хватает)
 	var out: PackedStringArray = PackedStringArray()
 	for part in line.split(","):
 		out.append(part.strip_edges())

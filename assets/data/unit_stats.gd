@@ -1,4 +1,5 @@
 class_name UnitStats
+
 extends Resource
 
 ## Data-driven статистика юнитов.

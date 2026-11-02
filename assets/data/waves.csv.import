@@ -6,10 +6,10 @@ uid="uid://blnmf68x6i8y1"
 
 [deps]
 
-files=["res://assets/data/waves.name.translation", "res://assets/data/waves.subwave.translation", "res://assets/data/waves.type.translation", "res://assets/data/waves.delay.translation", "res://assets/data/waves.count.translation", "res://assets/data/waves.interval.translation"]
+files=["res://assets/data/waves.name.translation", "res://assets/data/waves.subwave.translation", "res://assets/data/waves.type.translation", "res://assets/data/waves.delay.translation", "res://assets/data/waves.count.translation", "res://assets/data/waves.interval.translation", "res://assets/data/waves.spawn.translation", "res://assets/data/waves.spawn.translation"]
 
 source_file="res://assets/data/waves.csv"
-dest_files=["res://assets/data/waves.name.translation", "res://assets/data/waves.subwave.translation", "res://assets/data/waves.type.translation", "res://assets/data/waves.delay.translation", "res://assets/data/waves.count.translation", "res://assets/data/waves.interval.translation"]
+dest_files=["res://assets/data/waves.name.translation", "res://assets/data/waves.subwave.translation", "res://assets/data/waves.type.translation", "res://assets/data/waves.delay.translation", "res://assets/data/waves.count.translation", "res://assets/data/waves.interval.translation", "res://assets/data/waves.spawn.translation", "res://assets/data/waves.spawn.translation"]
 
 [params]
 

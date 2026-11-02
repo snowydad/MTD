@@ -6,7 +6,7 @@ extends RefCounted
 const ENEMIES_PATH := "res://assets/data/enemies.csv"
 const ECONOMY_PATH := "res://assets/data/economy.csv"
 
-static var _enemies: Dictionary = {}  # type -> stats dict
+static var _enemies: Dictionary = {}
 static var _economy: Dictionary = {}
 static var _loaded: bool = false
 
@@ -86,6 +86,7 @@ static func gold_for(type: String) -> int:
 	return 0
 
 
+
 static func apply_to_enemy(enemy: Enemy, type: String) -> void:
 	var s := enemy_stats(type)
 	if s.is_empty():
@@ -99,11 +100,21 @@ static func apply_to_enemy(enemy: Enemy, type: String) -> void:
 	enemy.hp = enemy.max_hp
 
 
-static func perk_cost() -> int:
+static func perk_cost_base() -> int:
 	_ensure()
 	return int(_economy.get("perk_cost", "50"))
+
+
+static func perk_cost_step() -> int:
+	_ensure()
+	return int(_economy.get("perk_cost_step", "5"))
 
 
 static func perk_bonus() -> float:
 	_ensure()
 	return float(_economy.get("perk_bonus", "0.15"))
+
+
+## устаревший алиас
+static func perk_cost() -> int:
+	return perk_cost_base()

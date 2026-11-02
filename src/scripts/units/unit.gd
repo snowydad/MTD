@@ -188,7 +188,7 @@ func _fire_at(target: Enemy) -> void:
 	if projectile_scene == null:
 		push_warning("Unit: projectile_scene not set")
 		return
-	var arrow: Projectile = projectile_scene.instantiate()
+	var arrow = projectile_scene.instantiate()
 	var parent := get_parent()
 	while parent and parent.name != "World":
 		parent = parent.get_parent()

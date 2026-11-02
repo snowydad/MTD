@@ -47,6 +47,7 @@ var _perk_panel_open: bool = false
 
 ## Множители перков (стакаются). Числа — из assets/data/economy.csv
 var perk_cost: int = 50
+var perk_cost_step: int = 5
 var perk_bonus: float = 0.15
 var perk_damage: float = 1.0
 var perk_range: float = 1.0
@@ -59,7 +60,8 @@ func _ready() -> void:
 	print("Viewport size: ", get_viewport().get_visible_rect().size)
 
 	GameData.reload()
-	perk_cost = GameData.perk_cost()
+	perk_cost = GameData.perk_cost_base()
+	perk_cost_step = GameData.perk_cost_step()
 	perk_bonus = GameData.perk_bonus()
 	_update_perk_button_labels()
 
@@ -176,9 +178,9 @@ func _update_gold_label() -> void:
 
 func _update_perk_button_labels() -> void:
 	var pct := int(round(perk_bonus * 100.0))
-	btn_perk_range.text = "Range\n+%d%%" % pct
-	btn_perk_speed.text = "Speed\n+%d%%" % pct
-	btn_perk_damage.text = "Damage\n+%d%%" % pct
+	btn_perk_range.text = "Range\n+%d%%\n%d" % [pct, perk_cost]
+	btn_perk_speed.text = "Speed\n+%d%%\n%d" % [pct, perk_cost]
+	btn_perk_damage.text = "Damage\n+%d%%\n%d" % [pct, perk_cost]
 
 
 func get_perk_multipliers() -> Dictionary:
@@ -190,13 +192,15 @@ func get_perk_multipliers() -> Dictionary:
 
 
 func _try_show_perks() -> void:
+	## Показ только после убийства (вызов из _on_enemy_died), если хватает золота.
+	## После покупки панель не открывается сразу — ждём следующее убийство.
 	if _game_over or _perk_panel_open:
 		return
 	if gold < perk_cost:
 		return
 	_perk_panel_open = true
+	_update_perk_button_labels()
 	perk_panel.visible = true
-	# Можно чуть замедлить игру — пока просто панель поверх
 
 
 func _on_perk_chosen(kind: String) -> void:
@@ -214,11 +218,14 @@ func _on_perk_chosen(kind: String) -> void:
 		"damage":
 			perk_damage *= (1.0 + perk_bonus)
 
-	print("PERK ", kind, " → dmg=", perk_damage, " range=", perk_range, " speed=", perk_speed)
+	# Каждый следующий перк дороже (линейно)
+	perk_cost += perk_cost_step
+	_update_perk_button_labels()
+
+	print("PERK ", kind, " → dmg=", perk_damage, " range=", perk_range, " speed=", perk_speed, " next_cost=", perk_cost)
 	_refresh_all_unit_stats()
 	_hide_perks()
-	# Если золота ещё хватает — снова показать выбор
-	_try_show_perks()
+	# Не открываем сразу: следующее появление — после убийства врага (_on_enemy_died → _try_show_perks)
 
 
 func _hide_perks() -> void:
