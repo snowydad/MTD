@@ -71,7 +71,7 @@ func _spawn_one() -> void:
 
 func _on_reached_wall(enemy: Enemy) -> void:
 	enemy_reached_wall.emit(enemy)
-	print("Goblin reached wall, dmg=", enemy.damage_to_wall)
+	print(enemy.name, " reached wall, dmg=", enemy.damage_to_wall)
 
 
 func _on_died(enemy: Enemy) -> void:

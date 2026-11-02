@@ -5,35 +5,44 @@
 [ext_resource type="Texture2D" uid="uid://c6k5yvug60ixc" path="res://assets/sprites/wall/wall.png" id="3_wall"]
 [ext_resource type="Script" uid="uid://dtxd560hupcew" path="res://src/scripts/enemies/enemy_spawner.gd" id="4_spawner"]
 [ext_resource type="PackedScene" uid="uid://cgoblin001" path="res://src/scenes/enemies/goblin.tscn" id="5_goblin"]
+[ext_resource type="PackedScene" uid="uid://corc001" path="res://src/scenes/enemies/orc.tscn" id="6_orc"]
 
-[node name="Main" type="Node2D" unique_id=1279938484]
+[node name="Main" type="Node2D" unique_id=1807029396]
 script = ExtResource("1_main")
 fill_rate = 1.0
 
-[node name="World" type="Node2D" parent="." unique_id=200881528]
+[node name="World" type="Node2D" parent="." unique_id=869464866]
 
-[node name="Background" type="Sprite2D" parent="World" unique_id=2040965282]
+[node name="Background" type="Sprite2D" parent="World" unique_id=1313523272]
 texture = ExtResource("2_bg")
 centered = false
 
-[node name="Wall" type="Sprite2D" parent="World" unique_id=1710361726]
+[node name="Wall" type="Sprite2D" parent="World" unique_id=27611528]
 position = Vector2(562, 2180)
 texture = ExtResource("3_wall")
 
-[node name="Enemies" type="Node2D" parent="World" unique_id=1661622175]
+[node name="Enemies" type="Node2D" parent="World" unique_id=416963808]
 
-[node name="GoblinSpawner" type="Node2D" parent="World/Enemies" unique_id=1651047896]
+[node name="GoblinSpawner" type="Node2D" parent="World/Enemies" unique_id=20185886]
 script = ExtResource("4_spawner")
 enemy_scene = ExtResource("5_goblin")
 spawn_interval = 3.2
 spawn_x_min = 35.0
 spawn_x_max = 1100.0
 
-[node name="Units" type="Node2D" parent="World" unique_id=760685352]
+[node name="OrcSpawner" type="Node2D" parent="World/Enemies" unique_id=1001019927]
+script = ExtResource("4_spawner")
+enemy_scene = ExtResource("6_orc")
+spawn_interval = 7.5
+spawn_x_min = 150.0
+spawn_x_max = 980.0
+spawn_y = -80.0
 
-[node name="UI" type="CanvasLayer" parent="." unique_id=1165154404]
+[node name="Units" type="Node2D" parent="World" unique_id=1096265458]
 
-[node name="HUD" type="Control" parent="UI" unique_id=418115187]
+[node name="UI" type="CanvasLayer" parent="." unique_id=1915967678]
+
+[node name="HUD" type="Control" parent="UI" unique_id=2124798048]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -42,14 +51,14 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TopBar" type="HBoxContainer" parent="UI/HUD" unique_id=500383471]
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD" unique_id=273622759]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 120.0
 grow_horizontal = 2
 
-[node name="WaveLabel" type="Label" parent="UI/HUD/TopBar" unique_id=1040742802]
+[node name="WaveLabel" type="Label" parent="UI/HUD/TopBar" unique_id=1561803175]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 42
@@ -57,7 +66,7 @@ text = "Волна 1 / 5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=1459248199]
+[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=843215853]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -68,28 +77,28 @@ grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
 
-[node name="BtnArcher" type="Button" parent="UI/HUD/BottomBar" unique_id=233227840]
+[node name="BtnArcher" type="Button" parent="UI/HUD/BottomBar" unique_id=1168265151]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Лучник
 12"
 
-[node name="BtnMage" type="Button" parent="UI/HUD/BottomBar" unique_id=1521275354]
+[node name="BtnMage" type="Button" parent="UI/HUD/BottomBar" unique_id=531551835]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Маг
 16"
 
-[node name="BtnCannon" type="Button" parent="UI/HUD/BottomBar" unique_id=1128443289]
+[node name="BtnCannon" type="Button" parent="UI/HUD/BottomBar" unique_id=1660038409]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Пушка
 20"
 
-[node name="TowerHP" type="ProgressBar" parent="UI/HUD" unique_id=433436445]
+[node name="TowerHP" type="ProgressBar" parent="UI/HUD" unique_id=456937124]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5

@@ -10,6 +10,7 @@ extends Node2D
 @onready var units_root: Node2D = $World/Units
 @onready var wall: Sprite2D = $World/Wall
 @onready var goblin_spawner: EnemySpawner = $World/Enemies/GoblinSpawner
+@onready var orc_spawner: EnemySpawner = $World/Enemies/OrcSpawner
 
 const ARCHER_SCENE := preload("res://src/scenes/units/archer.tscn")
 
@@ -56,6 +57,8 @@ func _ready() -> void:
 
 	if goblin_spawner:
 		goblin_spawner.enemy_reached_wall.connect(_on_enemy_reached_wall)
+	if orc_spawner:
+		orc_spawner.enemy_reached_wall.connect(_on_enemy_reached_wall)
 
 	_update_buttons()
 
@@ -117,6 +120,8 @@ func _on_tower_destroyed() -> void:
 	print("=== GAME OVER: стена разрушена ===")
 	if goblin_spawner:
 		goblin_spawner.stop()
+	if orc_spawner:
+		orc_spawner.stop()
 	btn_archer.disabled = true
 	btn_mage.disabled = true
 	btn_cannon.disabled = true
