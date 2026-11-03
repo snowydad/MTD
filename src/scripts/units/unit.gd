@@ -1,6 +1,9 @@
 class_name Unit
 extends Node2D
 
+const Z_UNITS := 40
+const Z_UNIT_JUMP := 45
+
 ## Базовый юнит на стене.
 ## Статы из UnitStats. После приземления ищет врагов и стреляет.
 ## Мерж: 3 одинаковых → 1 следующего уровня.
@@ -54,21 +57,28 @@ func setup(type: UnitType, lvl: int = 1) -> void:
 	_attack_cd = 0.15
 
 
+func _type_key() -> String:
+	match unit_type:
+		UnitType.ARCHER:
+			return "archer"
+		UnitType.MAGE:
+			return "mage"
+		UnitType.CANNON:
+			return "cannon"
+	return "archer"
+
+
 func _apply_stats() -> void:
-	var stats_type := _to_stats_type(unit_type)
-	var base: Dictionary = UnitStats.get_base(stats_type)
+	## Статы из assets/data/units.json по type+level, затем глобальные перки.
+	var base: Dictionary = GameData.unit_stats(_type_key(), level)
 	if base.is_empty():
-		push_warning("UnitStats: нет данных для типа %s" % unit_type)
+		push_warning("GameData: нет статов %s lv%d" % [_type_key(), level])
 		return
 
-	damage = base.get("damage", 10.0)
-	attack_speed = base.get("attack_speed", 1.0)
-	attack_range = base.get("range", 300.0)
-	splash_radius = base.get("splash_radius", 0.0)
-
-	for _i in range(level - 1):
-		damage *= UnitStats.MERGE_DAMAGE_MULT
-		attack_range *= UnitStats.MERGE_RANGE_MULT
+	damage = float(base.get("damage", 10.0))
+	attack_speed = float(base.get("attack_speed", 1.0))
+	attack_range = float(base.get("range", 300.0))
+	splash_radius = float(base.get("splash_radius", 0.0))
 
 	# Глобальные перки (с Main). setup() может вызываться до add_child → tree == null
 	var tree := get_tree()
@@ -118,7 +128,7 @@ func _to_stats_type(t: UnitType) -> UnitStats.UnitType:
 func play_spawn_jump(from_global: Vector2, to_global: Vector2) -> void:
 	global_position = from_global
 	target_global = to_global
-	z_index = 30
+	z_index = Z_UNIT_JUMP
 	_landed = false
 
 	var T := jump_duration
@@ -138,7 +148,7 @@ func _process(delta: float) -> void:
 		if _flight_time >= _flight_max:
 			_flying = false
 			global_position = target_global
-			z_index = 0
+			z_index = Z_UNITS
 			_landed = true
 			landed.emit(self)
 		return

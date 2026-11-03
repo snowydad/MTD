@@ -5,9 +5,11 @@ extends RefCounted
 
 const ENEMIES_PATH := "res://assets/data/enemies.csv"
 const ECONOMY_PATH := "res://assets/data/economy.csv"
+const UNITS_PATH := "res://assets/data/units.json"
 
 static var _enemies: Dictionary = {}
 static var _economy: Dictionary = {}
+static var _units: Dictionary = {}  # type -> { level_str -> stats }
 static var _loaded: bool = false
 
 
@@ -19,6 +21,7 @@ static func _ensure() -> void:
 	_economy = {}
 	_load_enemies()
 	_load_economy()
+	_load_units()
 
 
 static func reload() -> void:
@@ -98,6 +101,60 @@ static func apply_to_enemy(enemy: Enemy, type: String) -> void:
 	enemy.zigzag_amplitude = float(s["zigzag_amplitude"])
 	enemy.zigzag_frequency = float(s["zigzag_frequency"])
 	enemy.hp = enemy.max_hp
+
+
+
+static func _load_units() -> void:
+	_units = {}
+	if not FileAccess.file_exists(UNITS_PATH):
+		push_error("GameData: нет " + UNITS_PATH)
+		return
+	var f := FileAccess.open(UNITS_PATH, FileAccess.READ)
+	if f == null:
+		return
+	var text := f.get_as_text()
+	f.close()
+	var data = JSON.parse_string(text)
+	if typeof(data) != TYPE_DICTIONARY:
+		push_error("GameData: units.json — ожидался объект")
+		return
+	for type_key in data.keys():
+		var tname := str(type_key).to_lower()
+		var levels = data[type_key]
+		if typeof(levels) != TYPE_DICTIONARY:
+			continue
+		_units[tname] = {}
+		for lv_key in levels.keys():
+			var st = levels[lv_key]
+			if typeof(st) != TYPE_DICTIONARY:
+				continue
+			_units[tname][str(lv_key)] = {
+				"damage": float(st.get("damage", 10.0)),
+				"attack_speed": float(st.get("attack_speed", 1.0)),
+				"range": float(st.get("range", 300.0)),
+				"splash_radius": float(st.get("splash_radius", 0.0)),
+			}
+	print("GameData: units ", _units.keys())
+
+
+static func unit_stats(type: String, level: int = 1) -> Dictionary:
+	_ensure()
+	var tname := type.to_lower()
+	if not _units.has(tname):
+		return {}
+	var levels: Dictionary = _units[tname]
+	var key := str(level)
+	if levels.has(key):
+		return levels[key]
+	# fallback: nearest lower level
+	var best := 0
+	for k in levels.keys():
+		var lv := int(k)
+		if lv <= level and lv > best:
+			best = lv
+	if best > 0:
+		return levels[str(best)]
+	return {}
 
 
 static func perk_cost_base() -> int:

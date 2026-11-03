@@ -1,5 +1,5 @@
 wave,name,subwave,type,delay,count,interval,spawn_x_min,spawn_x_max
-1,Wave 1,1.1,goblin,0,4,4,45,1080
+1,Wave 1,1.1,goblin,0,4,4,460,660
 1,Wave 1,1.2,goblin,19,4,4,45,1080
 1,Wave 1,1.2,orc,20,2,7,55,1050
 2,Wave 2,2.1,goblin,0,4,4,35,1100

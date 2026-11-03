@@ -1,5 +1,8 @@
 extends Node2D
 
+const Z_DECOR := 10
+const Z_PROJECTILE := 25
+
 ## Стрела: полёт по дуге. Попадание → удаление.
 ## Промах → торчит в земле, потом исчезает.
 
@@ -51,7 +54,7 @@ func launch(from_global: Vector2, target: Enemy, dmg: float, _flight_time: float
 	_stuck = false
 	_elapsed = 0.0
 	_stuck_timer = 0.0
-	z_index = 40
+	z_index = Z_PROJECTILE
 	if sprite:
 		_base_scale = sprite.scale
 		sprite.modulate = Color(1, 1, 1, 1)
@@ -146,7 +149,7 @@ func _stick_in_ground() -> void:
 		sprite.scale = _base_scale
 		sprite.modulate.a = 1.0
 	# Выше фона (Background z=0), ниже UI; -1 прятало стрелу под bg
-	z_index = 5
+	z_index = Z_DECOR
 
 
 func _update_rotation(dir: Vector2) -> void:

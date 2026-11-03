@@ -27,9 +27,8 @@ var units: Array[Unit] = []
 
 @export_group("Charge")
 @export var fill_rate: float = 10.0
-@export var cost_archer: int = 12
-@export var cost_mage: int = 16
-@export var cost_cannon: int = 20
+## Шаг цены: 1-й юнит = step, 2-й = 2*step, 3-й = 3*step...
+@export var cost_step: int = 6
 
 @export_group("Tower")
 @export var tower_max_hp: float = 100.0
@@ -39,6 +38,10 @@ var units: Array[Unit] = []
 @export var merge_converge_time: float = 0.4
 
 var charge: float = 0.0
+## Покупки по типам — своя прогрессия цены у каждого.
+var bought_archer: int = 0
+var bought_mage: int = 0
+var bought_cannon: int = 0
 var tower_hp: float = 100.0
 var gold: int = 0
 var _game_over: bool = false
@@ -94,9 +97,10 @@ func _process(delta: float) -> void:
 	if _game_over:
 		return
 
-	var max_cost: float = maxf(cost_archer, maxf(cost_mage, cost_cannon))
-	if charge < max_cost:
-		charge = minf(charge + fill_rate * delta, max_cost)
+	# Копим до самой дорогой «следующей» цены среди трёх типов
+	var cap := float(maxi(_cost_for(Unit.UnitType.ARCHER), maxi(_cost_for(Unit.UnitType.MAGE), _cost_for(Unit.UnitType.CANNON))))
+	if charge < cap:
+		charge = minf(charge + fill_rate * delta, cap)
 	_update_buttons()
 
 
@@ -260,12 +264,38 @@ func _on_all_waves_complete() -> void:
 
 # ─── Кнопки / спавн ───────────────────────────────────────────────────────────
 
+func _bought_count(unit_type: Unit.UnitType) -> int:
+	match unit_type:
+		Unit.UnitType.ARCHER:
+			return bought_archer
+		Unit.UnitType.MAGE:
+			return bought_mage
+		Unit.UnitType.CANNON:
+			return bought_cannon
+	return 0
+
+
+func _cost_for(unit_type: Unit.UnitType) -> int:
+	## Своя прогрессия: 1-й = step, 2-й = 2*step, ...
+	return cost_step * (_bought_count(unit_type) + 1)
+
+
+func _register_purchase(unit_type: Unit.UnitType) -> void:
+	match unit_type:
+		Unit.UnitType.ARCHER:
+			bought_archer += 1
+		Unit.UnitType.MAGE:
+			bought_mage += 1
+		Unit.UnitType.CANNON:
+			bought_cannon += 1
+
+
 func _update_buttons() -> void:
 	if _game_over:
 		return
-	_refresh_button(btn_archer, "Лучник", cost_archer)
-	_refresh_button(btn_mage, "Маг", cost_mage)
-	_refresh_button(btn_cannon, "Пушка", cost_cannon)
+	_refresh_button(btn_archer, "Лучник", _cost_for(Unit.UnitType.ARCHER))
+	_refresh_button(btn_mage, "Маг", _cost_for(Unit.UnitType.MAGE))
+	_refresh_button(btn_cannon, "Пушка", _cost_for(Unit.UnitType.CANNON))
 
 
 func _refresh_button(btn: Button, title: String, cost: int) -> void:
@@ -292,19 +322,9 @@ func _on_spawn_pressed(unit_type: Unit.UnitType) -> void:
 		return
 
 	charge = 0.0
+	_register_purchase(unit_type)
 	_update_buttons()
 	_spawn_unit(unit_type)
-
-
-func _cost_for(unit_type: Unit.UnitType) -> int:
-	match unit_type:
-		Unit.UnitType.ARCHER:
-			return cost_archer
-		Unit.UnitType.MAGE:
-			return cost_mage
-		Unit.UnitType.CANNON:
-			return cost_cannon
-	return 999
 
 
 func _spawn_unit(unit_type: Unit.UnitType) -> void:
