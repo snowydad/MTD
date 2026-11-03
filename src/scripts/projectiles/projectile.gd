@@ -1,33 +1,40 @@
 extends Node2D
 
-## Стрела: от лучника (низ экрана) к врагу (выше по полю).
-## Траектория — почти прямая с лёгкой дугой «вверх», как на схеме.
-## В середине пути scale 150%, к концу снова 100%.
+## Стрела: полёт по дуге. Попадание → удаление.
+## Промах → торчит в земле, потом исчезает.
 
 @export_group("Flight")
 @export var max_speed: float = 650.0
 @export var min_flight_time: float = 0.3
 @export var max_flight_time: float = 1.2
-## Доп. подъём дуги в пикселях (вверх экрана). Масштабируется дистанцией.
 @export var arc_height: float = 80.0
 @export var arc_dist_factor: float = 0.12
 @export var lead_factor: float = 0.2
 
 @export_group("Visual")
-## Множитель масштаба в пике дуги (1.5 = +50%).
 @export var peak_scale: float = 1.5
 
 @export_group("Hit")
 @export var hit_radius: float = 42.0
 
+@export_group("Stuck")
+## Сколько секунд торчит в земле после промаха.
+@export var stuck_lifetime: float = 4.0
+## Случайный доп. наклон при посадке (радианы).
+@export var stuck_tilt_max: float = 0.35
+## Провал в «землю» по Y (px вниз).
+@export var stuck_embed_y: float = 12.0
+
 var damage: float = 10.0
-var _alive: bool = true
+var _flying: bool = true
+var _stuck: bool = false
 var _target: Enemy = null
 var _from: Vector2 = Vector2.ZERO
 var _to: Vector2 = Vector2.ZERO
 var _arc: float = 0.0
 var _duration: float = 0.5
 var _elapsed: float = 0.0
+var _stuck_timer: float = 0.0
 var _prev_pos: Vector2 = Vector2.ZERO
 var _base_scale: Vector2 = Vector2.ONE
 
@@ -40,10 +47,18 @@ func launch(from_global: Vector2, target: Enemy, dmg: float, _flight_time: float
 	_prev_pos = from_global
 	damage = dmg
 	_target = target
-	_alive = true
+	_flying = true
+	_stuck = false
 	_elapsed = 0.0
+	_stuck_timer = 0.0
+	z_index = 40
 	if sprite:
 		_base_scale = sprite.scale
+		sprite.modulate = Color(1, 1, 1, 1)
+	elif has_node("Sprite2D"):
+		sprite = $Sprite2D
+		_base_scale = sprite.scale
+		sprite.modulate = Color(1, 1, 1, 1)
 
 	_to = _compute_aim(from_global, target, 0.5)
 	_finalize_timing()
@@ -67,10 +82,8 @@ func _compute_aim(from: Vector2, target: Enemy, flight_t: float) -> Vector2:
 		return from + Vector2(0, -400)
 
 	var p := target.global_position
-	# Упреждение: враг ползёт вниз (+Y)
 	p.y += target.move_speed * flight_t * lead_factor
 
-	# Стреляем в сторону поля (вверх экрана). Не целимся ниже лучника.
 	if p.y > from.y - 16.0:
 		p = Vector2(target.global_position.x, from.y - 48.0)
 
@@ -79,15 +92,16 @@ func _compute_aim(from: Vector2, target: Enemy, flight_t: float) -> Vector2:
 
 func _point_on_path(u: float) -> Vector2:
 	u = clampf(u, 0.0, 1.0)
-	# Прямая к цели
 	var p := _from.lerp(_to, u)
-	# Лёгкая дуга вверх по экрану (−Y), пик в середине — как на рисунке
 	p.y -= _arc * sin(PI * u)
 	return p
 
 
 func _process(delta: float) -> void:
-	if not _alive:
+	if _stuck:
+		_process_stuck(delta)
+		return
+	if not _flying:
 		return
 
 	_elapsed += delta
@@ -100,30 +114,51 @@ func _process(delta: float) -> void:
 	if dpos.length_squared() > 0.2:
 		_update_rotation(dpos)
 
-	# Пик масштаба в середине пути: 1.0 → peak_scale → 1.0
 	if sprite:
-		var k := sin(PI * u)  # 0..1..0
-		var s := lerpf(1.0, peak_scale, k)
-		sprite.scale = _base_scale * s
+		var k := sin(PI * u)
+		sprite.scale = _base_scale * lerpf(1.0, peak_scale, k)
 
-	_try_hit()
+	if _try_hit():
+		return
 
 	if u >= 1.0:
-		_try_hit()
-		_die()
+		if not _try_hit():
+			_stick_in_ground()
+
+
+func _process_stuck(delta: float) -> void:
+	_stuck_timer -= delta
+	if sprite and _stuck_timer < 1.0:
+		sprite.modulate.a = clampf(_stuck_timer, 0.0, 1.0)
+	if _stuck_timer <= 0.0:
+		queue_free()
+
+
+func _stick_in_ground() -> void:
+	_flying = false
+	_stuck = true
+	_stuck_timer = stuck_lifetime
+	# Чуть втыкаем в землю
+	global_position.y += stuck_embed_y
+	# Лёгкий случайный наклон «воткнулась»
+	rotation += randf_range(-stuck_tilt_max, stuck_tilt_max)
+	if sprite:
+		sprite.scale = _base_scale
+		sprite.modulate.a = 1.0
+	# Выше фона (Background z=0), ниже UI; -1 прятало стрелу под bg
+	z_index = 5
 
 
 func _update_rotation(dir: Vector2) -> void:
-	# Спрайт остриём вверх (−Y)
 	rotation = dir.angle() + PI * 0.5
 
 
-func _try_hit() -> void:
+func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
 			_target.take_damage(damage)
-			_die()
-			return
+			_remove()
+			return true
 
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
@@ -131,10 +166,12 @@ func _try_hit() -> void:
 			continue
 		if global_position.distance_to(e.global_position) <= hit_radius:
 			e.take_damage(damage)
-			_die()
-			return
+			_remove()
+			return true
+	return false
 
 
-func _die() -> void:
-	_alive = false
+func _remove() -> void:
+	_flying = false
+	_stuck = false
 	queue_free()
