@@ -168,13 +168,8 @@ static func perk_cost_step() -> int:
 
 
 static func perk_bonus() -> float:
-	## legacy alias
-	return booster_bonus()
-
-
-static func booster_bonus() -> float:
 	_ensure()
-	return float(_economy.get("booster_bonus", _economy.get("perk_bonus", "0.10")))
+	return float(_economy.get("perk_bonus", "0.10"))
 
 
 ## устаревший алиас

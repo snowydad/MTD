@@ -49,10 +49,10 @@ var _game_over: bool = false
 var _merges_in_flight: int = 0
 var _perk_panel_open: bool = false
 
-## Бустеры: 3 из 7, шаг за золото. Шаг — economy.tsv booster_bonus.
+## Перки: 3 из 7, шаг за золото. Шаг — economy.tsv perk_bonus.
 var perk_cost: int = 50
 var perk_cost_step: int = 5
-var booster_bonus: float = 0.10
+var perk_bonus: float = 0.10
 var perk_damage: float = 1.0
 var perk_range: float = 1.0
 var perk_speed: float = 1.0
@@ -64,8 +64,8 @@ var _hp_mult: float = 1.0
 var _base_fill_rate: float = 10.0
 var _base_tower_max_hp: float = 100.0
 ## Текущие 3 предложения на панели
-var _booster_offers: Array[String] = []
-const BOOSTER_POOL: Array[String] = [
+var _perk_offers: Array[String] = []
+const PERK_POOL: Array[String] = [
 	"range", "damage", "speed", "accuracy", "hp", "energy", "gold",
 ]
 
@@ -78,7 +78,7 @@ func _ready() -> void:
 	GameData.reload()
 	perk_cost = GameData.perk_cost_base()
 	perk_cost_step = GameData.perk_cost_step()
-	booster_bonus = GameData.booster_bonus()
+	perk_bonus = GameData.perk_bonus()
 	_base_fill_rate = fill_rate
 	_base_tower_max_hp = tower_max_hp
 
@@ -93,9 +93,9 @@ func _ready() -> void:
 	btn_mage.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.MAGE))
 	btn_cannon.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.CANNON))
 
-	btn_perk_range.pressed.connect(_on_booster_slot.bind(0))
-	btn_perk_speed.pressed.connect(_on_booster_slot.bind(1))
-	btn_perk_damage.pressed.connect(_on_booster_slot.bind(2))
+	btn_perk_range.pressed.connect(_on_perk_slot.bind(0))
+	btn_perk_speed.pressed.connect(_on_perk_slot.bind(1))
+	btn_perk_damage.pressed.connect(_on_perk_slot.bind(2))
 
 	if wave_manager:
 		wave_manager.wave_started.connect(_on_wave_started)
@@ -233,7 +233,7 @@ func get_perk_multipliers() -> Dictionary:
 	}
 
 
-func _booster_title(kind: String) -> String:
+func _perk_title(kind: String) -> String:
 	match kind:
 		"range":
 			return "Дальность"
@@ -252,18 +252,18 @@ func _booster_title(kind: String) -> String:
 	return kind
 
 
-func _roll_booster_offers() -> void:
-	var pool: Array[String] = BOOSTER_POOL.duplicate()
+func _roll_perk_offers() -> void:
+	var pool: Array[String] = PERK_POOL.duplicate()
 	pool.shuffle()
-	_booster_offers = [pool[0], pool[1], pool[2]]
+	_perk_offers = [pool[0], pool[1], pool[2]]
 
 
-func _apply_booster_labels() -> void:
-	var pct := int(round(booster_bonus * 100.0))
+func _apply_perk_labels() -> void:
+	var pct := int(round(perk_bonus * 100.0))
 	var btns: Array[Button] = [btn_perk_range, btn_perk_speed, btn_perk_damage]
 	for i in range(3):
-		var kind := _booster_offers[i] if i < _booster_offers.size() else "range"
-		btns[i].text = "%s\n+%d%%\n%d" % [_booster_title(kind), pct, perk_cost]
+		var kind := _perk_offers[i] if i < _perk_offers.size() else "range"
+		btns[i].text = "%s\n+%d%%\n%d" % [_perk_title(kind), pct, perk_cost]
 
 
 func _try_show_perks() -> void:
@@ -272,17 +272,17 @@ func _try_show_perks() -> void:
 		return
 	if gold < perk_cost:
 		return
-	_roll_booster_offers()
-	_apply_booster_labels()
+	_roll_perk_offers()
+	_apply_perk_labels()
 	_perk_panel_open = true
 	perk_panel.visible = true
 
 
-func _on_booster_slot(slot: int) -> void:
-	if slot < 0 or slot >= _booster_offers.size():
+func _on_perk_slot(slot: int) -> void:
+	if slot < 0 or slot >= _perk_offers.size():
 		_hide_perks()
 		return
-	_on_perk_chosen(_booster_offers[slot])
+	_on_perk_chosen(_perk_offers[slot])
 
 
 func _on_perk_chosen(kind: String) -> void:
@@ -292,7 +292,7 @@ func _on_perk_chosen(kind: String) -> void:
 	gold -= perk_cost
 	_update_gold_label()
 
-	var b := 1.0 + booster_bonus
+	var b := 1.0 + perk_bonus
 	match kind:
 		"range":
 			perk_range *= b
@@ -321,7 +321,7 @@ func _on_perk_chosen(kind: String) -> void:
 			perk_gold *= b
 
 	perk_cost += perk_cost_step
-	print("BOOSTER ", kind, " x", b, " cost_next=", perk_cost,
+	print("PERK ", kind, " x", b, " cost_next=", perk_cost,
 		" dmg=", perk_damage, " range=", perk_range, " spd=", perk_speed,
 		" acc=", perk_accuracy, " gold=", perk_gold, " energy=", fill_rate, " hp_max=", tower_max_hp)
 	_refresh_all_unit_stats()
@@ -331,7 +331,7 @@ func _on_perk_chosen(kind: String) -> void:
 func _hide_perks() -> void:
 	_perk_panel_open = false
 	perk_panel.visible = false
-	_booster_offers.clear()
+	_perk_offers.clear()
 
 
 func _refresh_all_unit_stats() -> void:
