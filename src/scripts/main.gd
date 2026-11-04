@@ -8,6 +8,7 @@ extends Node2D
 @onready var btn_mage: Button = $UI/HUD/BottomBar/BtnMage
 @onready var btn_cannon: Button = $UI/HUD/BottomBar/BtnCannon
 @onready var tower_hp_bar: ProgressBar = $UI/HUD/TowerHP
+var tower_hp_label: Label = null
 @onready var perk_panel: HBoxContainer = $UI/HUD/PerkPanel
 @onready var btn_perk_range: Button = $UI/HUD/PerkPanel/BtnPerkRange
 @onready var btn_perk_speed: Button = $UI/HUD/PerkPanel/BtnPerkSpeed
@@ -82,6 +83,7 @@ func _ready() -> void:
 	_base_tower_max_hp = tower_max_hp
 
 	tower_hp = tower_max_hp
+	_ensure_hp_label()
 	_setup_hp_bar()
 	_update_hp_bar()
 	_update_gold_label()
@@ -119,16 +121,45 @@ func _process(delta: float) -> void:
 
 # ─── HP ───────────────────────────────────────────────────────────────────────
 
+
+func _ensure_hp_label() -> void:
+	## Лейбл абсолютного HP — из сцены или создаём в рантайме.
+	tower_hp_label = get_node_or_null("UI/HUD/TowerHPLabel") as Label
+	if tower_hp_label != null:
+		return
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null or tower_hp_bar == null:
+		return
+	var lb := Label.new()
+	lb.name = "TowerHPLabel"
+	lb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lb.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lb.add_theme_font_size_override("font_size", 28)
+	lb.add_theme_color_override("font_outline_color", Color.BLACK)
+	lb.add_theme_constant_override("outline_size", 5)
+	hud.add_child(lb)
+	# Повторяем якоря/отступы полоски HP
+	lb.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	lb.offset_left = tower_hp_bar.offset_left
+	lb.offset_right = tower_hp_bar.offset_right
+	lb.offset_top = tower_hp_bar.offset_top
+	lb.offset_bottom = tower_hp_bar.offset_bottom
+	tower_hp_label = lb
+
+
 func _setup_hp_bar() -> void:
 	tower_hp_bar.min_value = 0.0
 	tower_hp_bar.max_value = tower_max_hp
 	tower_hp_bar.value = tower_hp
-	tower_hp_bar.show_percentage = true
+	tower_hp_bar.show_percentage = false
 
 
 func _update_hp_bar() -> void:
 	tower_hp_bar.max_value = tower_max_hp
 	tower_hp_bar.value = clampf(tower_hp, 0.0, tower_max_hp)
+	if tower_hp_label:
+		tower_hp_label.text = "%d / %d" % [int(round(tower_hp)), int(round(tower_max_hp))]
 
 	var ratio := tower_hp / tower_max_hp if tower_max_hp > 0.0 else 0.0
 	var fill_style := StyleBoxFlat.new()
@@ -274,15 +305,18 @@ func _on_perk_chosen(kind: String) -> void:
 		"hp":
 			_hp_mult *= b
 			var old_max := tower_max_hp
+			var old_hp := tower_hp
 			tower_max_hp = _base_tower_max_hp * _hp_mult
-			# Текущий HP растёт пропорционально новому максимуму
-			if old_max > 0.0:
-				tower_hp = clampf(tower_hp / old_max * tower_max_hp, 0.0, tower_max_hp)
+			# 1) потолок +10%  2) лечение на величину прироста потолка
+			var gained := tower_max_hp - old_max
+			tower_hp = clampf(tower_hp + gained, 0.0, tower_max_hp)
 			_setup_hp_bar()
 			_update_hp_bar()
+			print("HP boost: ", old_hp, "/", old_max, " → ", tower_hp, "/", tower_max_hp)
 		"energy":
 			_energy_mult *= b
 			fill_rate = _base_fill_rate * _energy_mult
+			print("Energy boost: fill_rate=", fill_rate, " (x", _energy_mult, ")")
 		"gold":
 			perk_gold *= b
 
