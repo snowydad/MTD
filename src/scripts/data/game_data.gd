@@ -1,10 +1,10 @@
 class_name GameData
 extends RefCounted
 
-## Читает CSV из assets/data/. Править таблицы, не код.
+## Читает TSV/JSON из assets/data/. Править таблицы, не код.
 
-const ENEMIES_PATH := "res://assets/data/enemies.csv"
-const ECONOMY_PATH := "res://assets/data/economy.csv"
+const ENEMIES_PATH := "res://assets/data/enemies.tsv"
+const ECONOMY_PATH := "res://assets/data/economy.tsv"
 const UNITS_PATH := "res://assets/data/units.json"
 
 static var _enemies: Dictionary = {}
@@ -41,7 +41,7 @@ static func _load_enemies() -> void:
 		var line := f.get_line().strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
-		var c := line.split(",")
+		var c := line.split("\t")
 		if c.size() < 7:
 			continue
 		var t := c[0].strip_edges().to_lower()
@@ -69,7 +69,7 @@ static func _load_economy() -> void:
 		var line := f.get_line().strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
-		var c := line.split(",")
+		var c := line.split("\t")
 		if c.size() < 2:
 			continue
 		_economy[c[0].strip_edges()] = c[1].strip_edges()
@@ -168,8 +168,13 @@ static func perk_cost_step() -> int:
 
 
 static func perk_bonus() -> float:
+	## legacy alias
+	return booster_bonus()
+
+
+static func booster_bonus() -> float:
 	_ensure()
-	return float(_economy.get("perk_bonus", "0.15"))
+	return float(_economy.get("booster_bonus", _economy.get("perk_bonus", "0.10")))
 
 
 ## устаревший алиас

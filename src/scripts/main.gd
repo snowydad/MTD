@@ -48,13 +48,25 @@ var _game_over: bool = false
 var _merges_in_flight: int = 0
 var _perk_panel_open: bool = false
 
-## Множители перков (стакаются). Числа — из assets/data/economy.csv
+## Бустеры: 3 из 7, шаг за золото. Шаг — economy.tsv booster_bonus.
 var perk_cost: int = 50
 var perk_cost_step: int = 5
-var perk_bonus: float = 0.15
+var booster_bonus: float = 0.10
 var perk_damage: float = 1.0
 var perk_range: float = 1.0
 var perk_speed: float = 1.0
+var perk_accuracy: float = 1.0
+var perk_gold: float = 1.0
+## fill_rate и tower_max_hp растут на месте (export-базы * накопленные множители)
+var _energy_mult: float = 1.0
+var _hp_mult: float = 1.0
+var _base_fill_rate: float = 10.0
+var _base_tower_max_hp: float = 100.0
+## Текущие 3 предложения на панели
+var _booster_offers: Array[String] = []
+const BOOSTER_POOL: Array[String] = [
+	"range", "damage", "speed", "accuracy", "hp", "energy", "gold",
+]
 
 
 func _ready() -> void:
@@ -65,8 +77,9 @@ func _ready() -> void:
 	GameData.reload()
 	perk_cost = GameData.perk_cost_base()
 	perk_cost_step = GameData.perk_cost_step()
-	perk_bonus = GameData.perk_bonus()
-	_update_perk_button_labels()
+	booster_bonus = GameData.booster_bonus()
+	_base_fill_rate = fill_rate
+	_base_tower_max_hp = tower_max_hp
 
 	tower_hp = tower_max_hp
 	_setup_hp_bar()
@@ -78,9 +91,9 @@ func _ready() -> void:
 	btn_mage.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.MAGE))
 	btn_cannon.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.CANNON))
 
-	btn_perk_range.pressed.connect(_on_perk_chosen.bind("range"))
-	btn_perk_speed.pressed.connect(_on_perk_chosen.bind("speed"))
-	btn_perk_damage.pressed.connect(_on_perk_chosen.bind("damage"))
+	btn_perk_range.pressed.connect(_on_booster_slot.bind(0))
+	btn_perk_speed.pressed.connect(_on_booster_slot.bind(1))
+	btn_perk_damage.pressed.connect(_on_booster_slot.bind(2))
 
 	if wave_manager:
 		wave_manager.wave_started.connect(_on_wave_started)
@@ -170,7 +183,7 @@ func _on_enemy_spawned_for_damage(node: Node) -> void:
 func _on_enemy_died(enemy: Enemy) -> void:
 	if _game_over or enemy == null:
 		return
-	gold += enemy.gold_reward
+	gold += int(round(float(enemy.gold_reward) * perk_gold))
 	_update_gold_label()
 	_try_show_perks()
 
@@ -180,31 +193,65 @@ func _update_gold_label() -> void:
 		gold_label.text = str(gold)
 
 
-func _update_perk_button_labels() -> void:
-	var pct := int(round(perk_bonus * 100.0))
-	btn_perk_range.text = "Range\n+%d%%\n%d" % [pct, perk_cost]
-	btn_perk_speed.text = "Speed\n+%d%%\n%d" % [pct, perk_cost]
-	btn_perk_damage.text = "Damage\n+%d%%\n%d" % [pct, perk_cost]
-
-
 func get_perk_multipliers() -> Dictionary:
 	return {
 		"damage": perk_damage,
 		"range": perk_range,
 		"speed": perk_speed,
+		"accuracy": perk_accuracy,
 	}
 
 
+func _booster_title(kind: String) -> String:
+	match kind:
+		"range":
+			return "Дальность"
+		"damage":
+			return "Сила"
+		"speed":
+			return "Скорость"
+		"accuracy":
+			return "Точность"
+		"hp":
+			return "Здоровье"
+		"energy":
+			return "Энергия"
+		"gold":
+			return "Золото"
+	return kind
+
+
+func _roll_booster_offers() -> void:
+	var pool: Array[String] = BOOSTER_POOL.duplicate()
+	pool.shuffle()
+	_booster_offers = [pool[0], pool[1], pool[2]]
+
+
+func _apply_booster_labels() -> void:
+	var pct := int(round(booster_bonus * 100.0))
+	var btns: Array[Button] = [btn_perk_range, btn_perk_speed, btn_perk_damage]
+	for i in range(3):
+		var kind := _booster_offers[i] if i < _booster_offers.size() else "range"
+		btns[i].text = "%s\n+%d%%\n%d" % [_booster_title(kind), pct, perk_cost]
+
+
 func _try_show_perks() -> void:
-	## Показ только после убийства (вызов из _on_enemy_died), если хватает золота.
-	## После покупки панель не открывается сразу — ждём следующее убийство.
+	## После убийства, если хватает золота. После выбора — только со следующего килла.
 	if _game_over or _perk_panel_open:
 		return
 	if gold < perk_cost:
 		return
+	_roll_booster_offers()
+	_apply_booster_labels()
 	_perk_panel_open = true
-	_update_perk_button_labels()
 	perk_panel.visible = true
+
+
+func _on_booster_slot(slot: int) -> void:
+	if slot < 0 or slot >= _booster_offers.size():
+		_hide_perks()
+		return
+	_on_perk_chosen(_booster_offers[slot])
 
 
 func _on_perk_chosen(kind: String) -> void:
@@ -214,27 +261,43 @@ func _on_perk_chosen(kind: String) -> void:
 	gold -= perk_cost
 	_update_gold_label()
 
+	var b := 1.0 + booster_bonus
 	match kind:
 		"range":
-			perk_range *= (1.0 + perk_bonus)
+			perk_range *= b
 		"speed":
-			perk_speed *= (1.0 + perk_bonus)
+			perk_speed *= b
 		"damage":
-			perk_damage *= (1.0 + perk_bonus)
+			perk_damage *= b
+		"accuracy":
+			perk_accuracy *= b
+		"hp":
+			_hp_mult *= b
+			var old_max := tower_max_hp
+			tower_max_hp = _base_tower_max_hp * _hp_mult
+			# Текущий HP растёт пропорционально новому максимуму
+			if old_max > 0.0:
+				tower_hp = clampf(tower_hp / old_max * tower_max_hp, 0.0, tower_max_hp)
+			_setup_hp_bar()
+			_update_hp_bar()
+		"energy":
+			_energy_mult *= b
+			fill_rate = _base_fill_rate * _energy_mult
+		"gold":
+			perk_gold *= b
 
-	# Каждый следующий перк дороже (линейно)
 	perk_cost += perk_cost_step
-	_update_perk_button_labels()
-
-	print("PERK ", kind, " → dmg=", perk_damage, " range=", perk_range, " speed=", perk_speed, " next_cost=", perk_cost)
+	print("BOOSTER ", kind, " x", b, " cost_next=", perk_cost,
+		" dmg=", perk_damage, " range=", perk_range, " spd=", perk_speed,
+		" acc=", perk_accuracy, " gold=", perk_gold, " energy=", fill_rate, " hp_max=", tower_max_hp)
 	_refresh_all_unit_stats()
 	_hide_perks()
-	# Не открываем сразу: следующее появление — после убийства врага (_on_enemy_died → _try_show_perks)
 
 
 func _hide_perks() -> void:
 	_perk_panel_open = false
 	perk_panel.visible = false
+	_booster_offers.clear()
 
 
 func _refresh_all_unit_stats() -> void:

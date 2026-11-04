@@ -19,6 +19,7 @@ var damage: float = 10.0
 var attack_speed: float = 1.0
 var attack_range: float = 300.0
 var splash_radius: float = 0.0
+var accuracy: float = 1.0
 
 var slot_index: int = -1
 var target_global: Vector2 = Vector2.ZERO
@@ -79,6 +80,7 @@ func _apply_stats() -> void:
 	attack_speed = float(base.get("attack_speed", 1.0))
 	attack_range = float(base.get("range", 300.0))
 	splash_radius = float(base.get("splash_radius", 0.0))
+	accuracy = 1.0
 
 	# Глобальные перки (с Main). setup() может вызываться до add_child → tree == null
 	var tree := get_tree()
@@ -90,6 +92,7 @@ func _apply_stats() -> void:
 		damage *= float(m.get("damage", 1.0))
 		attack_range *= float(m.get("range", 1.0))
 		attack_speed *= float(m.get("speed", 1.0))
+		accuracy = float(m.get("accuracy", 1.0))
 
 
 func _apply_visual_level() -> void:
@@ -206,4 +209,4 @@ func _fire_at(target: Enemy) -> void:
 		parent = get_tree().current_scene
 	parent.add_child(arrow)
 	var from := global_position + muzzle_offset
-	arrow.launch(from, target, damage, arrow_flight_time)
+	arrow.launch(from, target, damage, accuracy, arrow_flight_time)

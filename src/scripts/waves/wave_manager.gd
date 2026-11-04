@@ -17,11 +17,8 @@ signal all_waves_complete
 @export var pause_between_waves: float = 2.0
 @export var auto_start: bool = true
 
-## spawn_x_min/max — из waves.csv на текущую волну (пиксели)
+## spawn_x_min/max — из waves.csv на каждую entry (пиксели)
 @export var spawn_y: float = -50.0
-
-var _wave_x_min: float = 35.0
-var _wave_x_max: float = 1100.0
 
 var current_wave_index: int = -1
 var _spawn_parent: Node2D
@@ -63,8 +60,6 @@ func _start_next_wave() -> void:
 	_spawn_done = false
 	_cleared = false
 	_entry_jobs_left = 0
-	_wave_x_min = float(wave.get("spawn_x_min", 35.0))
-	_wave_x_max = float(wave.get("spawn_x_max", 1100.0))
 
 	var wname: String = str(wave.get("name", "Wave %d" % (current_wave_index + 1)))
 	print("=== WAVE START: ", wname, " (enemies=", _planned, ") ===")
@@ -89,6 +84,8 @@ func _run_entry(entry: Dictionary) -> void:
 	var count: int = int(entry.get("count", 0))
 	var interval: float = float(entry.get("interval", 1.0))
 	var etype: String = str(entry.get("type", "goblin"))
+	var x_min: float = float(entry.get("spawn_x_min", 35.0))
+	var x_max: float = float(entry.get("spawn_x_max", 1100.0))
 
 	if delay > 0.0:
 		await get_tree().create_timer(delay).timeout
@@ -99,7 +96,7 @@ func _run_entry(entry: Dictionary) -> void:
 	for i in range(count):
 		if not _running:
 			break
-		_spawn_enemy(etype)
+		_spawn_enemy(etype, x_min, x_max)
 		if i < count - 1 and interval > 0.0:
 			await get_tree().create_timer(interval).timeout
 
@@ -108,7 +105,7 @@ func _run_entry(entry: Dictionary) -> void:
 		_on_all_entries_finished()
 
 
-func _spawn_enemy(etype: String) -> void:
+func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> void:
 	var scene: PackedScene = null
 	match etype:
 		"orc":
@@ -122,7 +119,7 @@ func _spawn_enemy(etype: String) -> void:
 
 	var enemy: Enemy = scene.instantiate()
 	GameData.apply_to_enemy(enemy, etype)
-	var x := randf_range(_wave_x_min, _wave_x_max)
+	var x := randf_range(x_min, x_max)
 	var pos := Vector2(x, spawn_y)
 	_spawn_parent.add_child(enemy)
 	enemy.setup(pos, target_y)

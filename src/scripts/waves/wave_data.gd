@@ -1,11 +1,11 @@
 class_name WaveData
 extends RefCounted
 
-## Волны из assets/data/waves.csv
-## Колонки: wave, name, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
-## spawn_x_* — в пикселях, на всю волну (берутся из первой строки волны).
+## Волны из assets/data/waves.tsv
+## Колонки: wave, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
+## Имя в UI = "Wave {wave}".
 
-const WAVES_PATH := "res://assets/data/waves.csv"
+const WAVES_PATH := "res://assets/data/waves.tsv"
 
 static var _waves: Array = []
 static var _loaded: bool = false
@@ -29,7 +29,7 @@ static func _ensure_loaded() -> void:
 	var header_line := f.get_line().strip_edges()
 	if header_line.is_empty():
 		f.close()
-		push_error("WaveData: пустой CSV")
+		push_error("WaveData: пустой TSV")
 		return
 
 	var by_wave: Dictionary = {}
@@ -38,34 +38,29 @@ static func _ensure_loaded() -> void:
 		var line := f.get_line().strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
-		var cols := _parse_csv_line(line)
-		if cols.size() < 7:
+		var cols := _parse_tsv_line(line)
+		if cols.size() < 6:
 			push_warning("WaveData: пропуск строки (мало колонок): " + line)
 			continue
 
 		var wid := int(cols[0])
-		var wname := String(cols[1])
-		var sid := String(cols[2])
-		var etype := String(cols[3]).to_lower()
-		var delay := float(cols[4])
-		var count := int(cols[5])
-		var interval := float(cols[6])
+		var sid := String(cols[1])
+		var etype := String(cols[2]).to_lower()
+		var delay := float(cols[3])
+		var count := int(cols[4])
+		var interval := float(cols[5])
 		var x_min := 35.0
 		var x_max := 1100.0
-		if cols.size() >= 9:
-			x_min = float(cols[7])
-			x_max = float(cols[8])
+		if cols.size() >= 8:
+			x_min = float(cols[6])
+			x_max = float(cols[7])
 
 		if not by_wave.has(wid):
 			by_wave[wid] = {
 				"id": wid,
-				"name": wname,
-				"spawn_x_min": x_min,
-				"spawn_x_max": x_max,
+				"name": "Wave %d" % wid,
 				"_subs": {},
 			}
-		elif wname != "" and String(by_wave[wid]["name"]) == "":
-			by_wave[wid]["name"] = wname
 
 		var subs: Dictionary = by_wave[wid]["_subs"]
 		if not subs.has(sid):
@@ -75,6 +70,8 @@ static func _ensure_loaded() -> void:
 			"delay": delay,
 			"count": count,
 			"interval": interval,
+			"spawn_x_min": x_min,
+			"spawn_x_max": x_max,
 		})
 
 	f.close()
@@ -95,17 +92,15 @@ static func _ensure_loaded() -> void:
 		_waves.append({
 			"id": int(w["id"]),
 			"name": str(w["name"]),
-			"spawn_x_min": float(w["spawn_x_min"]),
-			"spawn_x_max": float(w["spawn_x_max"]),
 			"subwaves": subwaves,
 		})
 
-	print("WaveData: CSV → волн: ", _waves.size())
+	print("WaveData: TSV → волн: ", _waves.size())
 
 
-static func _parse_csv_line(line: String) -> PackedStringArray:
+static func _parse_tsv_line(line: String) -> PackedStringArray:
 	var out: PackedStringArray = PackedStringArray()
-	for part in line.split(","):
+	for part in line.split("\t"):
 		out.append(part.strip_edges())
 	return out
 

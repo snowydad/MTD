@@ -13,6 +13,8 @@ const Z_PROJECTILE := 25
 @export var arc_height: float = 80.0
 @export var arc_dist_factor: float = 0.12
 @export var lead_factor: float = 0.2
+## Разброс прицела при accuracy=1 (px). Реальный = max_miss / accuracy.
+@export var max_miss_px: float = 36.0
 
 @export_group("Visual")
 @export var peak_scale: float = 1.5
@@ -29,6 +31,7 @@ const Z_PROJECTILE := 25
 @export var stuck_embed_y: float = 12.0
 
 var damage: float = 10.0
+var accuracy: float = 1.0
 var _flying: bool = true
 var _stuck: bool = false
 var _target: Enemy = null
@@ -44,11 +47,12 @@ var _base_scale: Vector2 = Vector2.ONE
 @onready var sprite: Sprite2D = $Sprite2D
 
 
-func launch(from_global: Vector2, target: Enemy, dmg: float, _flight_time: float = -1.0) -> void:
+func launch(from_global: Vector2, target: Enemy, dmg: float, acc: float = 1.0, _flight_time: float = -1.0) -> void:
 	global_position = from_global
 	_from = from_global
 	_prev_pos = from_global
 	damage = dmg
+	accuracy = maxf(acc, 0.05)
 	_target = target
 	_flying = true
 	_stuck = false
@@ -86,6 +90,11 @@ func _compute_aim(from: Vector2, target: Enemy, flight_t: float) -> Vector2:
 
 	var p := target.global_position
 	p.y += target.move_speed * flight_t * lead_factor
+
+	# Разброс меткости: чем выше accuracy, тем меньше miss
+	var miss := max_miss_px / accuracy
+	p.x += randf_range(-miss, miss)
+	p.y += randf_range(-miss * 0.5, miss * 0.5)
 
 	if p.y > from.y - 16.0:
 		p = Vector2(target.global_position.x, from.y - 48.0)
