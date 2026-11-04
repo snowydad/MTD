@@ -60,13 +60,17 @@ var perk_accuracy: float = 1.0
 var perk_gold: float = 1.0
 ## fill_rate и tower_max_hp растут на месте (export-базы * накопленные множители)
 var _energy_mult: float = 1.0
-var _hp_mult: float = 1.0
 var _base_fill_rate: float = 10.0
 var _base_tower_max_hp: float = 100.0
+## HP-перк: +N к max и текущему HP; в пуле только при HP < порога
+@export_group("Perks")
+@export var hp_perk_amount: float = 10.0
+@export var hp_perk_hp_threshold: float = 90.0
+@export var hp_perk_chance: float = 0.5
 ## Текущие 3 предложения на панели
 var _perk_offers: Array[String] = []
-const PERK_POOL: Array[String] = [
-	"range", "damage", "speed", "accuracy", "hp", "energy", "gold",
+const PERK_POOL_BASE: Array[String] = [
+	"range", "damage", "speed", "accuracy", "energy", "gold",
 ]
 
 
@@ -253,7 +257,10 @@ func _perk_title(kind: String) -> String:
 
 
 func _roll_perk_offers() -> void:
-	var pool: Array[String] = PERK_POOL.duplicate()
+	var pool: Array[String] = PERK_POOL_BASE.duplicate()
+	# HP: только если текущий HP < 90, с шансом 50%
+	if tower_hp < hp_perk_hp_threshold and randf() < hp_perk_chance:
+		pool.append("hp")
 	pool.shuffle()
 	_perk_offers = [pool[0], pool[1], pool[2]]
 
@@ -263,7 +270,10 @@ func _apply_perk_labels() -> void:
 	var btns: Array[Button] = [btn_perk_range, btn_perk_speed, btn_perk_damage]
 	for i in range(3):
 		var kind := _perk_offers[i] if i < _perk_offers.size() else "range"
-		btns[i].text = "%s\n+%d%%\n%d" % [_perk_title(kind), pct, perk_cost]
+		if kind == "hp":
+			btns[i].text = "%s\n+%d\n%d" % [_perk_title(kind), int(hp_perk_amount), perk_cost]
+		else:
+			btns[i].text = "%s\n+%d%%\n%d" % [_perk_title(kind), pct, perk_cost]
 
 
 func _try_show_perks() -> void:
@@ -303,16 +313,14 @@ func _on_perk_chosen(kind: String) -> void:
 		"accuracy":
 			perk_accuracy *= b
 		"hp":
-			_hp_mult *= b
+			# Плоские +10 к прочности (max) и к текущему HP
 			var old_max := tower_max_hp
 			var old_hp := tower_hp
-			tower_max_hp = _base_tower_max_hp * _hp_mult
-			# 1) потолок +10%  2) лечение на величину прироста потолка
-			var gained := tower_max_hp - old_max
-			tower_hp = clampf(tower_hp + gained, 0.0, tower_max_hp)
+			tower_max_hp += hp_perk_amount
+			tower_hp = clampf(tower_hp + hp_perk_amount, 0.0, tower_max_hp)
 			_setup_hp_bar()
 			_update_hp_bar()
-			print("HP boost: ", old_hp, "/", old_max, " → ", tower_hp, "/", tower_max_hp)
+			print("HP perk: ", old_hp, "/", old_max, " → ", tower_hp, "/", tower_max_hp, " (+", hp_perk_amount, ")")
 		"energy":
 			_energy_mult *= b
 			fill_rate = _base_fill_rate * _energy_mult

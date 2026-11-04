@@ -1,14 +1,32 @@
 class_name WaveData
 extends RefCounted
 
-## Волны из assets/data/waves.tsv
+## Волны уровня: assets/data/levels/level_XX.tsv
 ## Колонки: wave, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
 ## Имя в UI = "Wave {wave}".
 
-const WAVES_PATH := "res://assets/data/waves.tsv"
+const LEVELS_DIR := "res://assets/data/levels/"
 
 static var _waves: Array = []
 static var _loaded: bool = false
+static var _level_id: int = 1
+static var _level_path: String = ""
+
+
+static func level_path(level_id: int = -1) -> String:
+	var id := level_id if level_id > 0 else _level_id
+	return "%slevel_%02d.tsv" % [LEVELS_DIR, id]
+
+
+static func set_level(level_id: int) -> void:
+	_level_id = maxi(level_id, 1)
+	_loaded = false
+	_waves = []
+	_ensure_loaded()
+
+
+static func current_level() -> int:
+	return _level_id
 
 
 static func _ensure_loaded() -> void:
@@ -16,14 +34,15 @@ static func _ensure_loaded() -> void:
 		return
 	_loaded = true
 	_waves = []
+	_level_path = level_path(_level_id)
 
-	if not FileAccess.file_exists(WAVES_PATH):
-		push_error("WaveData: нет файла " + WAVES_PATH)
+	if not FileAccess.file_exists(_level_path):
+		push_error("WaveData: нет файла " + _level_path)
 		return
 
-	var f := FileAccess.open(WAVES_PATH, FileAccess.READ)
+	var f := FileAccess.open(_level_path, FileAccess.READ)
 	if f == null:
-		push_error("WaveData: не открыть " + WAVES_PATH)
+		push_error("WaveData: не открыть " + _level_path)
 		return
 
 	var header_line := f.get_line().strip_edges()
@@ -95,7 +114,7 @@ static func _ensure_loaded() -> void:
 			"subwaves": subwaves,
 		})
 
-	print("WaveData: TSV → волн: ", _waves.size())
+	print("WaveData: level ", _level_id, " → волн: ", _waves.size())
 
 
 static func _parse_tsv_line(line: String) -> PackedStringArray:
