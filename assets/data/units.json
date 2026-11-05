@@ -5,13 +5,13 @@
 	"3": { "damage": 48, "attack_speed": 1.2, "range": 800, "splash_radius": 0 }
   },
   "mage": {
-	"1": { "damage": 18, "attack_speed": 0.4, "range": 900, "splash_radius": 0 },
-	"2": { "damage": 36, "attack_speed": 0.6, "range": 950, "splash_radius": 0 },
-	"3": { "damage": 72, "attack_speed": 1.0, "range": 1000, "splash_radius": 0 }
+	"1": { "damage": 18, "attack_speed": 0.3, "range": 900, "splash_radius": 0 },
+	"2": { "damage": 36, "attack_speed": 0.5, "range": 950, "splash_radius": 0 },
+	"3": { "damage": 72, "attack_speed": 0.8, "range": 1000, "splash_radius": 0 }
   },
   "cannon": {
-	"1": { "damage": 25, "attack_speed": 0.3, "range": 500, "splash_radius": 90 },
-	"2": { "damage": 50, "attack_speed": 0.5, "range": 550, "splash_radius": 120 },
-	"3": { "damage": 100, "attack_speed": 0.8, "range": 600, "splash_radius": 160 }
+	"1": { "damage": 25, "attack_speed": 0.2, "range": 500, "splash_radius": 90 },
+	"2": { "damage": 50, "attack_speed": 0.4, "range": 550, "splash_radius": 120 },
+	"3": { "damage": 100, "attack_speed": 0.6, "range": 600, "splash_radius": 160 }
   }
 }

@@ -17,5 +17,3 @@ texture = ExtResource("2_tex")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1231656617]
 position = Vector2(1.4305115e-06, 0)
 texture = ExtResource("3_4w1ii")
-
-[node name="Skeleton2D" type="Skeleton2D" parent="." unique_id=1572164762]
