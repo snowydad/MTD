@@ -1,11 +1,12 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://bm5m4lhwksky"]
 
-[ext_resource type="Script" path="res://src/scripts/projectiles/bomb.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/sprites/projectiles/bomb.png" id="2"]
+[ext_resource type="Script" uid="uid://d31gfmsau44s5" path="res://src/scripts/projectiles/bomb.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://c0l1h3movn680" path="res://assets/sprites/projectiles/bomb.png" id="2"]
 
-[node name="Bomb" type="Node2D"]
+[node name="Bomb" type="Node2D" unique_id=2086617203]
 z_index = 25
 script = ExtResource("1")
+arc_height = 340.0
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=354802152]
 texture = ExtResource("2")

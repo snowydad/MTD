@@ -30,8 +30,11 @@ var units: Array[Unit] = []
 
 @export_group("Charge")
 @export var fill_rate: float = 10.0
-## Шаг цены: 1-й юнит = step, 2-й = 2*step, 3-й = 3*step...
-@export var cost_step: int = 6
+## Цены юнитов — assets/data/economy.tsv (unit_cost_*)
+var cost_base_archer: int = 6
+var cost_base_mage: int = 8
+var cost_base_mortar: int = 10
+var cost_step: int = 6
 
 @export_group("Tower")
 @export var tower_max_hp: float = 100.0
@@ -85,6 +88,10 @@ func _ready() -> void:
 	perk_cost = GameData.perk_cost_base()
 	perk_cost_step = GameData.perk_cost_step()
 	perk_bonus = GameData.perk_bonus()
+	cost_step = GameData.unit_cost_step()
+	cost_base_archer = GameData.unit_cost_base("archer")
+	cost_base_mage = GameData.unit_cost_base("mage")
+	cost_base_mortar = GameData.unit_cost_base("mortar")
 	_base_fill_rate = fill_rate
 	_base_tower_max_hp = tower_max_hp
 
@@ -379,9 +386,20 @@ func _bought_count(unit_type: Unit.UnitType) -> int:
 	return 0
 
 
+func _base_cost(unit_type: Unit.UnitType) -> int:
+	match unit_type:
+		Unit.UnitType.ARCHER:
+			return cost_base_archer
+		Unit.UnitType.MAGE:
+			return cost_base_mage
+		Unit.UnitType.CANNON:
+			return cost_base_mortar
+	return cost_base_archer
+
+
 func _cost_for(unit_type: Unit.UnitType) -> int:
-	## Своя прогрессия: 1-й = step, 2-й = 2*step, ...
-	return cost_step * (_bought_count(unit_type) + 1)
+	## 1-я покупка = base, далее + cost_step за каждую уже купленную
+	return _base_cost(unit_type) + cost_step * _bought_count(unit_type)
 
 
 func _register_purchase(unit_type: Unit.UnitType) -> void:

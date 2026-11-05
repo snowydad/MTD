@@ -2,3 +2,7 @@ key	value
 perk_cost	50
 perk_cost_step	5
 perk_bonus	0.10
+unit_cost_step	6
+unit_cost_archer	6
+unit_cost_mage	12
+unit_cost_mortar	18

@@ -9,7 +9,7 @@ const UNITS_PATH := "res://assets/data/units.json"
 
 static var _enemies: Dictionary = {}
 static var _economy: Dictionary = {}
-static var _units: Dictionary = {}  # type -> { level_str -> stats }
+static var _units: Dictionary = {}
 static var _loaded: bool = false
 
 
@@ -36,7 +36,7 @@ static func _load_enemies() -> void:
 	var f := FileAccess.open(ENEMIES_PATH, FileAccess.READ)
 	if f == null:
 		return
-	f.get_line()  # header
+	f.get_line()
 	while not f.eof_reached():
 		var line := f.get_line().strip_edges()
 		if line.is_empty() or line.begins_with("#"):
@@ -89,19 +89,18 @@ static func gold_for(type: String) -> int:
 	return 0
 
 
-
-static func apply_to_enemy(enemy: Enemy, type: String) -> void:
+static func apply_to_enemy(enemy: Node, type: String) -> void:
+	## Без typehint Enemy — иначе цикл class_name GameData ↔ Enemy.
 	var s := enemy_stats(type)
-	if s.is_empty():
+	if s.is_empty() or enemy == null:
 		return
-	enemy.max_hp = float(s["max_hp"])
-	enemy.move_speed = float(s["move_speed"])
-	enemy.damage_to_wall = float(s["damage_to_wall"])
-	enemy.gold_reward = int(s["gold_reward"])
-	enemy.zigzag_amplitude = float(s["zigzag_amplitude"])
-	enemy.zigzag_frequency = float(s["zigzag_frequency"])
-	enemy.hp = enemy.max_hp
-
+	enemy.set("max_hp", float(s["max_hp"]))
+	enemy.set("move_speed", float(s["move_speed"]))
+	enemy.set("damage_to_wall", float(s["damage_to_wall"]))
+	enemy.set("gold_reward", int(s["gold_reward"]))
+	enemy.set("zigzag_amplitude", float(s["zigzag_amplitude"]))
+	enemy.set("zigzag_frequency", float(s["zigzag_frequency"]))
+	enemy.set("hp", float(s["max_hp"]))
 
 
 static func _load_units() -> void:
@@ -146,7 +145,6 @@ static func unit_stats(type: String, level: int = 1) -> Dictionary:
 	var key := str(level)
 	if levels.has(key):
 		return levels[key]
-	# fallback: nearest lower level
 	var best := 0
 	for k in levels.keys():
 		var lv := int(k)
@@ -172,6 +170,19 @@ static func perk_bonus() -> float:
 	return float(_economy.get("perk_bonus", "0.10"))
 
 
-## устаревший алиас
 static func perk_cost() -> int:
 	return perk_cost_base()
+
+
+static func unit_cost_step() -> int:
+	_ensure()
+	return int(_economy.get("unit_cost_step", "6"))
+
+
+static func unit_cost_base(type: String) -> int:
+	_ensure()
+	var t := type.to_lower()
+	var key := "unit_cost_%s" % t
+	if t == "cannon" or t == "mortar":
+		key = "unit_cost_mortar"
+	return int(_economy.get(key, "6"))
