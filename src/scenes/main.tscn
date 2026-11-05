@@ -9,6 +9,7 @@
 
 [node name="Main" type="Node2D" unique_id=1754875794]
 script = ExtResource("1_main")
+fill_rate = 1.0
 
 [node name="World" type="Node2D" parent="." unique_id=1892325913]
 
