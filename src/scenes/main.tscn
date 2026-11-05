@@ -7,41 +7,40 @@
 [ext_resource type="PackedScene" uid="uid://cgoblin001" path="res://src/scenes/enemies/goblin.tscn" id="5_goblin"]
 [ext_resource type="PackedScene" uid="uid://corc001" path="res://src/scenes/enemies/orc.tscn" id="6_orc"]
 
-[node name="Main" type="Node2D" unique_id=894355140]
+[node name="Main" type="Node2D" unique_id=1754875794]
 script = ExtResource("1_main")
-fill_rate = 1.0
 
-[node name="World" type="Node2D" parent="." unique_id=161020375]
+[node name="World" type="Node2D" parent="." unique_id=1892325913]
 
-[node name="Background" type="Sprite2D" parent="World" unique_id=462109135]
+[node name="Background" type="Sprite2D" parent="World" unique_id=1837913644]
 texture = ExtResource("2_bg")
 centered = false
 
-[node name="Wall" type="Sprite2D" parent="World" unique_id=2090086570]
+[node name="Wall" type="Sprite2D" parent="World" unique_id=1371753665]
 z_index = 30
 position = Vector2(562, 2180)
 texture = ExtResource("3_wall")
 
-[node name="Decor" type="Node2D" parent="World" unique_id=242465247]
+[node name="Decor" type="Node2D" parent="World" unique_id=1732343015]
 z_index = 10
 
-[node name="Enemies" type="Node2D" parent="World" unique_id=1352409849]
+[node name="Enemies" type="Node2D" parent="World" unique_id=487966614]
 z_index = 20
 y_sort_enabled = true
 
-[node name="WaveManager" type="Node" parent="World" unique_id=614022886]
+[node name="WaveManager" type="Node" parent="World" unique_id=758251038]
 script = ExtResource("4_wave")
 goblin_scene = ExtResource("5_goblin")
 orc_scene = ExtResource("6_orc")
 
-[node name="Units" type="Node2D" parent="World" unique_id=2071522211]
+[node name="Units" type="Node2D" parent="World" unique_id=600501949]
 z_index = 40
 y_sort_enabled = true
 
-[node name="UI" type="CanvasLayer" parent="." unique_id=1113439869]
+[node name="UI" type="CanvasLayer" parent="." unique_id=185658158]
 layer = 10
 
-[node name="HUD" type="Control" parent="UI" unique_id=237570012]
+[node name="HUD" type="Control" parent="UI" unique_id=1375949401]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,7 +49,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="GoldLabel" type="Label" parent="UI/HUD" unique_id=1957736731]
+[node name="GoldLabel" type="Label" parent="UI/HUD" unique_id=2096344441]
 layout_mode = 1
 offset_left = 24.0
 offset_top = 24.0
@@ -63,14 +62,14 @@ theme_override_font_sizes/font_size = 48
 text = "0"
 vertical_alignment = 1
 
-[node name="TopBar" type="HBoxContainer" parent="UI/HUD" unique_id=737411559]
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD" unique_id=1034956678]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 120.0
 grow_horizontal = 2
 
-[node name="WaveLabel" type="Label" parent="UI/HUD/TopBar" unique_id=410442595]
+[node name="WaveLabel" type="Label" parent="UI/HUD/TopBar" unique_id=1385349307]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 42
@@ -78,7 +77,7 @@ text = "Волна 1 / 5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PerkPanel" type="HBoxContainer" parent="UI/HUD" unique_id=418909889]
+[node name="PerkPanel" type="HBoxContainer" parent="UI/HUD" unique_id=1476423614]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -95,28 +94,28 @@ grow_vertical = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="BtnPerkRange" type="Button" parent="UI/HUD/PerkPanel" unique_id=1699701794]
+[node name="BtnPerkRange" type="Button" parent="UI/HUD/PerkPanel" unique_id=2142005481]
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Range
 +15%"
 
-[node name="BtnPerkSpeed" type="Button" parent="UI/HUD/PerkPanel" unique_id=540999]
+[node name="BtnPerkSpeed" type="Button" parent="UI/HUD/PerkPanel" unique_id=1817235047]
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Speed
 +15%"
 
-[node name="BtnPerkDamage" type="Button" parent="UI/HUD/PerkPanel" unique_id=2097361352]
+[node name="BtnPerkDamage" type="Button" parent="UI/HUD/PerkPanel" unique_id=885369129]
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Damage
 +15%"
 
-[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=1164589173]
+[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=758268662]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -127,40 +126,59 @@ grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
 
-[node name="BtnArcher" type="Button" parent="UI/HUD/BottomBar" unique_id=1237980430]
+[node name="BtnArcher" type="Button" parent="UI/HUD/BottomBar" unique_id=1974266731]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Лучник
 12"
 
-[node name="BtnMage" type="Button" parent="UI/HUD/BottomBar" unique_id=780320727]
+[node name="BtnMage" type="Button" parent="UI/HUD/BottomBar" unique_id=165371637]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Маг
 16"
 
-[node name="BtnCannon" type="Button" parent="UI/HUD/BottomBar" unique_id=470486515]
+[node name="BtnCannon" type="Button" parent="UI/HUD/BottomBar" unique_id=1924448554]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
-text = "Пушка
+text = "Мортира
 20"
 
-[node name="TowerHP" type="ProgressBar" parent="UI/HUD" unique_id=1187560315]
+[node name="TowerHP" type="ProgressBar" parent="UI/HUD" unique_id=1574774983]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -310.5
-offset_top = -366.0
-offset_right = 289.5
+offset_left = -280.0
+offset_top = -360.0
+offset_right = 280.0
 offset_bottom = -290.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(1, 0, 0, 1)
-theme_override_font_sizes/font_size = 52
 value = 100.0
+show_percentage = false
+
+[node name="TowerHPLabel" type="Label" parent="UI/HUD" unique_id=1628715741]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -360.0
+offset_right = 280.0
+offset_bottom = -290.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
+text = "100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1

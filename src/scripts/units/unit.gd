@@ -201,12 +201,21 @@ func _fire_at(target: Enemy) -> void:
 	if projectile_scene == null:
 		push_warning("Unit: projectile_scene not set")
 		return
-	var arrow = projectile_scene.instantiate()
+	var proj = projectile_scene.instantiate()
 	var parent := get_parent()
 	while parent and parent.name != "World":
 		parent = parent.get_parent()
 	if parent == null:
 		parent = get_tree().current_scene
-	parent.add_child(arrow)
+	parent.add_child(proj)
 	var from := global_position + muzzle_offset
-	arrow.launch(from, target, damage, accuracy, arrow_flight_time)
+	# Снаряды принимают разный launch: стрела / фаербол / бомба
+	match unit_type:
+		UnitType.ARCHER:
+			proj.launch(from, target, damage, accuracy, arrow_flight_time)
+		UnitType.MAGE:
+			proj.launch(from, target, damage, accuracy, level)
+		UnitType.CANNON:
+			proj.launch(from, target, damage, accuracy, level, splash_radius)
+		_:
+			proj.launch(from, target, damage, accuracy)

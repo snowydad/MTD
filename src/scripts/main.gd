@@ -18,6 +18,8 @@ var tower_hp_label: Label = null
 @onready var wave_manager: WaveManager = $World/WaveManager
 
 const ARCHER_SCENE := preload("res://src/scenes/units/archer.tscn")
+const MAGE_SCENE := preload("res://src/scenes/units/mage.tscn")
+const MORTAR_SCENE := preload("res://src/scenes/units/mortar.tscn")
 
 var units: Array[Unit] = []
 
@@ -313,14 +315,11 @@ func _on_perk_chosen(kind: String) -> void:
 		"accuracy":
 			perk_accuracy *= b
 		"hp":
-			# Плоские +10 к прочности (max) и к текущему HP
-			var old_max := tower_max_hp
+			# +10 только к текущему HP, потолок не меняется (80/100 → 90/100)
 			var old_hp := tower_hp
-			tower_max_hp += hp_perk_amount
 			tower_hp = clampf(tower_hp + hp_perk_amount, 0.0, tower_max_hp)
-			_setup_hp_bar()
 			_update_hp_bar()
-			print("HP perk: ", old_hp, "/", old_max, " → ", tower_hp, "/", tower_max_hp, " (+", hp_perk_amount, ")")
+			print("HP perk: ", old_hp, "/", tower_max_hp, " → ", tower_hp, "/", tower_max_hp, " (+", hp_perk_amount, ")")
 		"energy":
 			_energy_mult *= b
 			fill_rate = _base_fill_rate * _energy_mult
@@ -400,7 +399,7 @@ func _update_buttons() -> void:
 		return
 	_refresh_button(btn_archer, "Лучник", _cost_for(Unit.UnitType.ARCHER))
 	_refresh_button(btn_mage, "Маг", _cost_for(Unit.UnitType.MAGE))
-	_refresh_button(btn_cannon, "Пушка", _cost_for(Unit.UnitType.CANNON))
+	_refresh_button(btn_cannon, "Мортира", _cost_for(Unit.UnitType.CANNON))
 
 
 func _refresh_button(btn: Button, title: String, cost: int) -> void:
@@ -422,35 +421,44 @@ func _on_spawn_pressed(unit_type: Unit.UnitType) -> void:
 	if units.size() >= max_units:
 		print("Стена заполнена")
 		return
-	if unit_type != Unit.UnitType.ARCHER:
-		print("Пока только лучник")
-		return
-
 	charge = 0.0
 	_register_purchase(unit_type)
 	_update_buttons()
 	_spawn_unit(unit_type)
 
 
+func _scene_for(unit_type: Unit.UnitType) -> PackedScene:
+	match unit_type:
+		Unit.UnitType.MAGE:
+			return MAGE_SCENE
+		Unit.UnitType.CANNON:
+			return MORTAR_SCENE
+		_:
+			return ARCHER_SCENE
+
+
 func _spawn_unit(unit_type: Unit.UnitType) -> void:
-	var unit: Unit = ARCHER_SCENE.instantiate()
+	var unit: Unit = _scene_for(unit_type).instantiate()
 	units_root.add_child(unit)
 	unit.setup(unit_type, 1)
 	units.append(unit)
 	unit.landed.connect(_on_unit_landed)
 
-	var slots := _compute_slots(units.size())
+	var ordered := _formation_order()
+	var slots := _compute_slots(ordered.size())
 	var btn := _button_for_type(unit_type)
 	var from_global: Vector2 = btn.get_global_rect().get_center()
-	var new_idx := units.size() - 1
 
-	for i in range(units.size() - 1):
-		units[i].slot_index = i
-		units[i].move_to_slot(slots[i])
+	# Назначить слоты по формации; новый юнит прыгает в свой
+	for i in range(ordered.size()):
+		var u: Unit = ordered[i]
+		u.slot_index = i
+		if u == unit:
+			unit.play_spawn_jump(from_global, slots[i])
+		elif not u.merge_locked:
+			u.move_to_slot(slots[i])
 
-	unit.slot_index = new_idx
-	unit.play_spawn_jump(from_global, slots[new_idx])
-	print("Spawned archer #", units.size())
+	print("Spawned ", Unit.UnitType.keys()[unit_type], " #", units.size())
 
 
 func _on_unit_landed(_unit: Unit) -> void:
@@ -569,18 +577,66 @@ func _run_merge(triple: Array[Unit]) -> void:
 
 
 func _reform_formation() -> void:
-	# Чистим мёртвые ссылки
 	units = units.filter(func(u: Unit) -> bool: return is_instance_valid(u))
-
-	var slots := _compute_slots(units.size())
-	for i in range(units.size()):
-		units[i].slot_index = i
-		if not units[i].merge_locked:
-			units[i].is_merging = false
-		units[i].move_to_slot(slots[i])
+	var ordered := _formation_order()
+	var slots := _compute_slots(ordered.size())
+	for i in range(ordered.size()):
+		var u: Unit = ordered[i]
+		u.slot_index = i
+		if not u.merge_locked:
+			u.is_merging = false
+			u.move_to_slot(slots[i])
 
 
 # ─── Формация ─────────────────────────────────────────────────────────────────
+# Слева направо: мортиры | маги | лучники | маги | мортиры
+# Мортиры всегда по краям; при дисбалансе «лишние» уезжают в сторону, где их уже больше.
+
+func _formation_order() -> Array[Unit]:
+	var archers: Array[Unit] = []
+	var mages: Array[Unit] = []
+	var mortars: Array[Unit] = []
+	for u in units:
+		if not is_instance_valid(u):
+			continue
+		match u.unit_type:
+			Unit.UnitType.MAGE:
+				mages.append(u)
+			Unit.UnitType.CANNON:
+				mortars.append(u)
+			_:
+				archers.append(u)
+
+	var left_m: Array[Unit] = []
+	var right_m: Array[Unit] = []
+	for m in mortars:
+		if left_m.size() <= right_m.size():
+			left_m.append(m)
+		else:
+			right_m.append(m)
+	# «Мерж в сторону где больше» — если справа уже больше, новое ушло бы туда выше
+
+	var left_g: Array[Unit] = []
+	var right_g: Array[Unit] = []
+	for g in mages:
+		if left_g.size() <= right_g.size():
+			left_g.append(g)
+		else:
+			right_g.append(g)
+
+	var ordered: Array[Unit] = []
+	# Край ← центр: reverse левых, чтобы крайний был самым левым
+	var lm := left_m.duplicate()
+	lm.reverse()
+	var lg := left_g.duplicate()
+	lg.reverse()
+	ordered.append_array(lm)
+	ordered.append_array(lg)
+	ordered.append_array(archers)
+	ordered.append_array(right_g)
+	ordered.append_array(right_m)
+	return ordered
+
 
 func _compute_slots(count: int) -> Array[Vector2]:
 	var slots: Array[Vector2] = []
