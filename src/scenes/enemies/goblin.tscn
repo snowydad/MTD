@@ -7,7 +7,7 @@
 script = ExtResource("1_enemy")
 move_speed = 100.0
 zigzag_amplitude = 20.0
-zigzag_frequency = 20.25
+zigzag_frequency = 0.25
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1934326275]
 texture = ExtResource("2_tex")
