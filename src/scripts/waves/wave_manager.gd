@@ -10,8 +10,11 @@ signal wave_spawn_complete(wave_index: int)
 signal wave_cleared(wave_index: int)
 signal all_waves_complete
 
+const _GOBLIN_SWIFT_DEFAULT := preload("res://src/scenes/enemies/goblin_swift.tscn")
+
 @export var target_y: float = 2070.0
 @export var goblin_scene: PackedScene
+@export var goblin_swift_scene: PackedScene
 @export var orc_scene: PackedScene
 @export var spawn_parent_path: NodePath = ^"../Enemies"
 @export var pause_between_waves: float = 2.0
@@ -122,6 +125,10 @@ func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> 
 	match etype:
 		"orc":
 			scene = orc_scene
+		"goblin_swift":
+			scene = goblin_swift_scene if goblin_swift_scene != null else _GOBLIN_SWIFT_DEFAULT
+		"goblin":
+			scene = goblin_scene
 		_:
 			scene = goblin_scene
 
@@ -135,7 +142,6 @@ func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> 
 	var pos := Vector2(x, spawn_y)
 	_spawn_parent.add_child(enemy)
 	enemy.setup(pos, target_y)
-	# setup сбрасывает hp из max_hp — данные уже на enemy
 	enemy.hp = enemy.max_hp
 	enemy.reached_wall.connect(_on_enemy_resolved)
 	enemy.died.connect(_on_enemy_resolved)

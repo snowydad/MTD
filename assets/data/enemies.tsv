@@ -1,4 +1,4 @@
 type	max_hp	move_speed	damage_to_wall	gold_reward	zigzag_amplitude	zigzag_frequency
 goblin	30	100	5	10	20	0.25
-swift_goblin	30	150	5	10	30	0.25
+goblin_swift	30	150	5	10	60	0.25
 orc	80	55	12	15	15	0.15
