@@ -29,6 +29,26 @@ static func current_level() -> int:
 	return _level_id
 
 
+static func max_level() -> int:
+	## Сколько level_XX.tsv подряд начиная с 01.
+	var n := 0
+	var i := 1
+	while FileAccess.file_exists(level_path(i)):
+		n = i
+		i += 1
+		if i > 99:
+			break
+	return n
+
+
+static func next_level_id() -> int:
+	var cur := _level_id
+	var nxt := cur + 1
+	if FileAccess.file_exists(level_path(nxt)):
+		return nxt
+	return 1  # цикл с 1-го
+
+
 static func _ensure_loaded() -> void:
 	if _loaded:
 		return

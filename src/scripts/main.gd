@@ -50,6 +50,9 @@ var bought_mage: int = 0
 var bought_cannon: int = 0
 var tower_hp: float = 100.0
 var gold: int = 0
+var _level_id: int = 1
+var _victory_panel: Control = null
+var _victory_label: Label = null
 var _game_over: bool = false
 var _merges_in_flight: int = 0
 var _perk_panel_open: bool = false
@@ -85,6 +88,8 @@ func _ready() -> void:
 	print("Viewport size: ", get_viewport().get_visible_rect().size)
 
 	GameData.reload()
+	_level_id = 1
+	WaveData.set_level(_level_id)
 	perk_cost = GameData.perk_cost_base()
 	perk_cost_step = GameData.perk_cost_step()
 	perk_bonus = GameData.perk_bonus()
@@ -100,6 +105,7 @@ func _ready() -> void:
 	_setup_hp_bar()
 	_update_hp_bar()
 	_update_gold_label()
+	_ensure_victory_panel()
 	perk_panel.visible = false
 
 	btn_archer.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.ARCHER))
@@ -354,12 +360,6 @@ func _refresh_all_unit_stats() -> void:
 			u._apply_stats()
 
 
-func _on_wave_started(wave_index: int, wave_name: String) -> void:
-	var total := WaveData.wave_count()
-	wave_label.text = "%s / %d" % [wave_name, total]
-	print("UI: ", wave_label.text)
-
-
 func _on_wave_spawn_complete(wave_index: int) -> void:
 	print("UI: spawn complete wave ", wave_index + 1)
 
@@ -368,9 +368,109 @@ func _on_wave_cleared(wave_index: int) -> void:
 	print("UI: cleared wave ", wave_index + 1)
 
 
+func _on_wave_started(wave_index: int, wave_name: String) -> void:
+	var total := WaveData.wave_count()
+	wave_label.text = "Ур.%d  %s / %d" % [_level_id, wave_name, total]
+	print("UI: ", wave_label.text)
+
+
 func _on_all_waves_complete() -> void:
-	wave_label.text = "Победа!"
-	print("=== WIN ===")
+	print("=== LEVEL ", _level_id, " COMPLETE  gold=", gold, " ===")
+	wave_label.text = "Ур.%d — победа" % _level_id
+	_show_victory()
+
+
+func _ensure_victory_panel() -> void:
+	if _victory_panel != null and is_instance_valid(_victory_panel):
+		return
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null:
+		return
+	var panel := PanelContainer.new()
+	panel.name = "VictoryPanel"
+	panel.visible = false
+	panel.z_index = 100
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -280
+	panel.offset_right = 280
+	panel.offset_top = -160
+	panel.offset_bottom = 160
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 24)
+	panel.add_child(vbox)
+	var lb := Label.new()
+	lb.name = "VictoryLabel"
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lb.add_theme_font_size_override("font_size", 42)
+	lb.text = "Победа!"
+	vbox.add_child(lb)
+	var btn := Button.new()
+	btn.name = "VictoryOk"
+	btn.text = "OK"
+	btn.custom_minimum_size = Vector2(200, 72)
+	btn.add_theme_font_size_override("font_size", 36)
+	btn.pressed.connect(_on_victory_ok)
+	vbox.add_child(btn)
+	hud.add_child(panel)
+	_victory_panel = panel
+	_victory_label = lb
+
+
+func _show_victory() -> void:
+	_ensure_victory_panel()
+	if _victory_label:
+		_victory_label.text = "Уровень %d пройден!\nЗолото: %d" % [_level_id, gold]
+	if _victory_panel:
+		_victory_panel.visible = true
+
+
+func _on_victory_ok() -> void:
+	if _victory_panel:
+		_victory_panel.visible = false
+	_go_next_level()
+
+
+func _go_next_level() -> void:
+	## Золото и перки сохраняем. Стену и цены юнитов — сброс. Врагов чистим. HP полный.
+	_clear_enemies()
+	_clear_units()
+	_reset_unit_prices()
+	charge = 0.0
+	tower_hp = tower_max_hp
+	_update_hp_bar()
+	_update_buttons()
+
+	var nxt := WaveData.next_level_id()
+	_level_id = nxt
+	WaveData.set_level(_level_id)
+	print(">>> Start level ", _level_id, " (gold=", gold, ")")
+
+	if wave_manager:
+		wave_manager.restart_sequence()
+	wave_label.text = "Ур.%d" % _level_id
+
+
+func _clear_enemies() -> void:
+	var root := get_node_or_null("World/Enemies")
+	if root == null:
+		return
+	for c in root.get_children():
+		c.queue_free()
+
+
+func _clear_units() -> void:
+	for u in units:
+		if is_instance_valid(u):
+			u.queue_free()
+	units.clear()
+	_merges_in_flight = 0
+
+
+func _reset_unit_prices() -> void:
+	bought_archer = 0
+	bought_mage = 0
+	bought_cannon = 0
 
 
 # ─── Кнопки / спавн ───────────────────────────────────────────────────────────

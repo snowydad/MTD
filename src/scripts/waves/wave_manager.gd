@@ -46,6 +46,18 @@ func start_sequence() -> void:
 	_start_next_wave()
 
 
+func restart_sequence() -> void:
+	## Новый уровень / повтор с первой волны текущего WaveData.
+	_running = false
+	_spawn_done = false
+	_cleared = false
+	_entry_jobs_left = 0
+	_planned = 0
+	_spawned = 0
+	current_wave_index = -1
+	start_sequence()
+
+
 func _start_next_wave() -> void:
 	current_wave_index += 1
 	if current_wave_index >= WaveData.wave_count():
