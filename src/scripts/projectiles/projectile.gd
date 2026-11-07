@@ -42,6 +42,7 @@ var _duration: float = 0.5
 var _elapsed: float = 0.0
 var _stuck_timer: float = 0.0
 var _prev_pos: Vector2 = Vector2.ZERO
+var _move_direction: Vector2 = Vector2.UP
 var _base_scale: Vector2 = Vector2.ONE
 
 @onready var sprite: Sprite2D = $Sprite2D
@@ -51,6 +52,7 @@ func launch(from_global: Vector2, target: Enemy, dmg: float, acc: float = 1.0, _
 	global_position = from_global
 	_from = from_global
 	_prev_pos = from_global
+	_move_direction = Vector2.UP
 	damage = dmg
 	accuracy = maxf(acc, 0.05)
 	_target = target
@@ -125,6 +127,7 @@ func _process(delta: float) -> void:
 
 	if dpos.length_squared() > 0.2:
 		_update_rotation(dpos)
+		_move_direction = dpos.normalized()
 
 	if sprite:
 		var k := sin(PI * u)
@@ -168,7 +171,7 @@ func _update_rotation(dir: Vector2) -> void:
 func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
-			_target.take_damage(damage)
+			_target.take_damage(damage, _move_direction)
 			_remove()
 			return true
 
@@ -177,7 +180,7 @@ func _try_hit() -> bool:
 		if e == null or not e._alive:
 			continue
 		if global_position.distance_to(e.global_position) <= hit_radius:
-			e.take_damage(damage)
+			e.take_damage(damage, _move_direction)
 			_remove()
 			return true
 	return false

@@ -20,6 +20,7 @@ var _to: Vector2 = Vector2.ZERO
 var _duration: float = 0.5
 var _elapsed: float = 0.0
 var _prev: Vector2 = Vector2.ZERO
+var _move_direction: Vector2 = Vector2.UP
 var _amp: float = 40.0
 var _alive: bool = true
 
@@ -30,6 +31,7 @@ func launch(from_global: Vector2, target: Enemy, dmg: float, acc: float = 1.0, l
 	global_position = from_global
 	_from = from_global
 	_prev = from_global
+	_move_direction = Vector2.UP
 	damage = dmg
 	accuracy = maxf(acc, 0.05)
 	level = lvl
@@ -106,6 +108,7 @@ func _process(delta: float) -> void:
 	global_position = pos
 	if d.length_squared() > 0.2:
 		rotation = d.angle() + PI * 0.5
+		_move_direction = d.normalized()
 	if _try_hit() or u >= 1.0:
 		_alive = false
 		queue_free()
@@ -114,11 +117,11 @@ func _process(delta: float) -> void:
 func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
-			_target.take_damage(damage)
+			_target.take_damage(damage, _move_direction)
 			return true
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e._alive and global_position.distance_to(e.global_position) <= hit_radius:
-			e.take_damage(damage)
+			e.take_damage(damage, _move_direction)
 			return true
 	return false

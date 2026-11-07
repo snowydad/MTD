@@ -114,36 +114,41 @@ func _process(delta: float) -> void:
 	if d.length_squared() > 0.2:
 		rotation = d.angle() + PI * 0.5
 
-	if _try_hit():
+	if _try_hit(d):
 		return
 	if u >= 1.0:
-		_explode(null)
+		_explode(null, Vector2.ZERO)
 		_stick()
 
 
-func _try_hit() -> bool:
+func _try_hit(impact_direction: Vector2) -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
-			_explode(_target)
+			_explode(_target, impact_direction)
 			queue_free()
 			return true
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e._alive and global_position.distance_to(e.global_position) <= hit_radius:
-			_explode(e)
+			_explode(e, impact_direction)
 			queue_free()
 			return true
 	return false
 
 
-func _explode(primary: Enemy) -> void:
+func _explode(primary: Enemy, impact_direction: Vector2) -> void:
 	var origin := global_position
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or not e._alive:
 			continue
 		if origin.distance_to(e.global_position) <= splash_radius:
-			e.take_damage(damage)
+			var hit_direction := impact_direction
+			if e != primary or hit_direction.length_squared() < 0.001:
+				hit_direction = e.global_position - origin
+			if hit_direction.length_squared() < 0.001:
+				hit_direction = Vector2.UP
+			e.take_damage(damage, hit_direction.normalized())
 
 
 func _stick() -> void:

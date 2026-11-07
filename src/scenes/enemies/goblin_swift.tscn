@@ -1,16 +1,13 @@
 [gd_scene format=3 uid="uid://cmscuvrq2lmfw"]
 
-[ext_resource type="Script" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
-[ext_resource type="Texture2D" path="res://assets/sprites/enemies/goblin_swift.png" id="2_tex"]
+[ext_resource type="Script" uid="uid://l5gvo6ju3fi" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
+[ext_resource type="Texture2D" uid="uid://ci0rqexa5bgds" path="res://assets/sprites/enemies/goblin_swift.png" id="2_tex"]
 
-[node name="GoblinSwift" type="Node2D"]
+[node name="GoblinSwift" type="Node2D" unique_id=1223112580]
 script = ExtResource("1_enemy")
-max_hp = 30.0
 move_speed = 150.0
-damage_to_wall = 5.0
-gold_reward = 10
 zigzag_amplitude = 30.0
 zigzag_frequency = 0.25
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=148501053]
 texture = ExtResource("2_tex")
