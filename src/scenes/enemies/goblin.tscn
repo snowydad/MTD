@@ -16,18 +16,19 @@ visible = false
 texture = ExtResource("2_tex")
 
 [node name="SpineSprite3" type="SpineSprite" parent="." unique_id=157551974]
-visible = false
-position = Vector2(0, 41)
-scale = Vector2(0.07, 0.07)
 skeleton_data_res = ExtResource("3_k5cuv")
 preview_skin = "Default"
 preview_animation = "walk"
 preview_frame = false
 preview_time = 0.0
+visible = false
+position = Vector2(0, 41)
+scale = Vector2(0.07, 0.07)
 
 [node name="SpineSprite" type="SpineSprite" parent="." unique_id=2087501530]
 skeleton_data_res = ExtResource("4_w4qt1")
 preview_skin = "Default"
-preview_animation = "wallk"
+preview_animation = "attack"
 preview_frame = false
 preview_time = 0.0
+scale = Vector2(0.5, 0.5)
