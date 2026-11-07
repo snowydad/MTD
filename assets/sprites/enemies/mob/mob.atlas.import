@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://c7k2wx2jroy7f"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/enemies/goblin/mob.atlas"
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

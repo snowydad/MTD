@@ -1,0 +1,25 @@
+[gd_resource type="SpineSkeletonDataResource" format=3 uid="uid://b6e7kq0qkjbic"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://c7k2wx2jroy7f" path="res://assets/sprites/enemies/mob/mob.atlas" id="1_2x2s5"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://cj7xs0ecq4ck6" path="res://assets/sprites/enemies/mob/mob.skel" id="2_stcj5"]
+
+[sub_resource type="SpineAnimationMix" id="SpineAnimationMix_ma3vt"]
+from = "idle"
+to = "wallk"
+mix = 0.1
+
+[sub_resource type="SpineAnimationMix" id="SpineAnimationMix_sxa8n"]
+from = "wallk"
+to = "idle"
+mix = 0.1
+
+[sub_resource type="SpineAnimationMix" id="SpineAnimationMix_3bgfr"]
+from = "idle"
+to = "attack"
+mix = 0.1
+
+[resource]
+atlas_res = ExtResource("1_2x2s5")
+skeleton_file_res = ExtResource("2_stcj5")
+default_mix = 0.1
+animation_mixes = [SubResource("SpineAnimationMix_ma3vt"), SubResource("SpineAnimationMix_sxa8n"), SubResource("SpineAnimationMix_3bgfr")]

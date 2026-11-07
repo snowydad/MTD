@@ -1,0 +1,14 @@
+mob.png
+size:308,172
+filter:Linear,Linear
+mob_body
+bounds:199,74,107,96
+mob_hand_l
+bounds:199,2,67,70
+mob_hand_r
+bounds:114,18,83,152
+mob_head
+bounds:2,14,156,110
+rotate:90
+mob_leg_r
+bounds:268,20,35,52
