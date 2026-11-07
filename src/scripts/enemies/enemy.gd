@@ -29,6 +29,8 @@ extends Node2D
 @export var spine_move_threshold: float = 5.0
 ## Если длительность die из Spine недоступна.
 @export var die_fallback_duration: float = 0.8
+## После die — гасим альфу (как стрелы в земле).
+@export var die_fade_duration: float = 0.5
 
 var hp: float = 30.0
 var _target_y: float = 2070.0
@@ -188,6 +190,12 @@ func _start_die() -> void:
 
 	var wait := _die_anim_duration()
 	await get_tree().create_timer(wait).timeout
+	if not is_instance_valid(self):
+		return
+	# Пропадание по альфе после анимации смерти
+	var fade := create_tween()
+	fade.tween_property(self, "modulate:a", 0.0, die_fade_duration)
+	await fade.finished
 	if is_instance_valid(self):
 		queue_free()
 
