@@ -5,6 +5,10 @@ extends Node2D
 
 @export_group("Stats")
 @export var max_hp: float = 30.0
+## Броня (physical). Позже режет физ. урон.
+@export var max_ap: float = 0.0
+## Маг. защита. Позже режет маг. урон.
+@export var max_mp: float = 0.0
 @export var move_speed: float = 180.0
 @export var damage_to_wall: float = 5.0
 @export var gold_reward: int = 10
@@ -33,6 +37,8 @@ extends Node2D
 @export var die_fade_duration: float = 0.5
 
 var hp: float = 30.0
+var ap: float = 0.0
+var mp: float = 0.0
 var _target_y: float = 2070.0
 var _base_x: float = 0.0
 var _base_y: float = 0.0
@@ -81,6 +87,8 @@ func setup(spawn_pos: Vector2, target_y: float) -> void:
 
 	_target_y = target_y
 	hp = max_hp
+	ap = max_ap
+	mp = max_mp
 	_alive = true
 	_dying = false
 	_time = randf() * TAU

@@ -42,16 +42,18 @@ static func _load_enemies() -> void:
 		if line.is_empty() or line.begins_with("#"):
 			continue
 		var c := line.split("\t")
-		if c.size() < 7:
+		if c.size() < 9:
 			continue
 		var t := c[0].strip_edges().to_lower()
 		_enemies[t] = {
 			"max_hp": float(c[1]),
-			"move_speed": float(c[2]),
-			"damage_to_wall": float(c[3]),
-			"gold_reward": int(c[4]),
-			"zigzag_amplitude": float(c[5]),
-			"zigzag_frequency": float(c[6]),
+			"max_ap": float(c[2]),
+			"max_mp": float(c[3]),
+			"move_speed": float(c[4]),
+			"damage_to_wall": float(c[5]),
+			"gold_reward": int(c[6]),
+			"zigzag_amplitude": float(c[7]),
+			"zigzag_frequency": float(c[8]),
 		}
 	f.close()
 	print("GameData: enemies ", _enemies.keys())
@@ -95,12 +97,16 @@ static func apply_to_enemy(enemy: Node, type: String) -> void:
 	if s.is_empty() or enemy == null:
 		return
 	enemy.set("max_hp", float(s["max_hp"]))
+	enemy.set("max_ap", float(s.get("max_ap", 0.0)))
+	enemy.set("max_mp", float(s.get("max_mp", 0.0)))
 	enemy.set("move_speed", float(s["move_speed"]))
 	enemy.set("damage_to_wall", float(s["damage_to_wall"]))
 	enemy.set("gold_reward", int(s["gold_reward"]))
 	enemy.set("zigzag_amplitude", float(s["zigzag_amplitude"]))
 	enemy.set("zigzag_frequency", float(s["zigzag_frequency"]))
 	enemy.set("hp", float(s["max_hp"]))
+	enemy.set("ap", float(s.get("max_ap", 0.0)))
+	enemy.set("mp", float(s.get("max_mp", 0.0)))
 
 
 static func _load_units() -> void:
