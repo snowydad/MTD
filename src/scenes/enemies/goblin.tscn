@@ -28,7 +28,7 @@ scale = Vector2(0.07, 0.07)
 [node name="SpineSprite" type="SpineSprite" parent="." unique_id=2087501530]
 skeleton_data_res = ExtResource("4_w4qt1")
 preview_skin = "Default"
-preview_animation = "attack"
+preview_animation = "walk"
 preview_frame = false
 preview_time = 0.0
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.55, 0.55)
