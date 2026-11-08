@@ -14,7 +14,7 @@ const Z_PROJECTILE := 25
 @export var arc_dist_factor: float = 0.12
 @export var lead_factor: float = 0.2
 ## Разброс прицела при accuracy=1 (px). Реальный = max_miss / accuracy.
-@export var max_miss_px: float = 36.0
+@export var max_miss_px: float = 55.0
 
 @export_group("Visual")
 @export var peak_scale: float = 1.5
@@ -30,7 +30,9 @@ const Z_PROJECTILE := 25
 ## Провал в «землю» по Y (px вниз).
 @export var stuck_embed_y: float = 12.0
 
-var damage: float = 10.0
+var dhp: float = 0.0
+var mhp: float = 0.0
+var amp: float = 0.0
 var accuracy: float = 1.0
 var _flying: bool = true
 var _stuck: bool = false
@@ -42,18 +44,19 @@ var _duration: float = 0.5
 var _elapsed: float = 0.0
 var _stuck_timer: float = 0.0
 var _prev_pos: Vector2 = Vector2.ZERO
-var _move_direction: Vector2 = Vector2.UP
+var _last_dir: Vector2 = Vector2(0, -1)
 var _base_scale: Vector2 = Vector2.ONE
 
 @onready var sprite: Sprite2D = $Sprite2D
 
 
-func launch(from_global: Vector2, target: Enemy, dmg: float, acc: float = 1.0, _flight_time: float = -1.0) -> void:
+func launch(from_global: Vector2, target: Enemy, p_dhp: float = 0.0, p_mhp: float = 0.0, p_amp: float = 0.0, acc: float = 1.0, _flight_time: float = -1.0) -> void:
 	global_position = from_global
 	_from = from_global
 	_prev_pos = from_global
-	_move_direction = Vector2.UP
-	damage = dmg
+	dhp = p_dhp
+	mhp = p_mhp
+	amp = p_amp
 	accuracy = maxf(acc, 0.05)
 	_target = target
 	_flying = true
@@ -93,10 +96,10 @@ func _compute_aim(from: Vector2, target: Enemy, flight_t: float) -> Vector2:
 	var p := target.global_position
 	p.y += target.move_speed * flight_t * lead_factor
 
-	# Разброс меткости: чем выше accuracy, тем меньше miss
-	var miss := max_miss_px / accuracy
+	# Разброс: miss = max_miss / accuracy² (буст точности заметно сужает конус)
+	var miss := max_miss_px / (accuracy * accuracy)
 	p.x += randf_range(-miss, miss)
-	p.y += randf_range(-miss * 0.5, miss * 0.5)
+	p.y += randf_range(-miss * 0.35, miss * 0.35)
 
 	if p.y > from.y - 16.0:
 		p = Vector2(target.global_position.x, from.y - 48.0)
@@ -126,8 +129,8 @@ func _process(delta: float) -> void:
 	global_position = pos
 
 	if dpos.length_squared() > 0.2:
+		_last_dir = dpos
 		_update_rotation(dpos)
-		_move_direction = dpos.normalized()
 
 	if sprite:
 		var k := sin(PI * u)
@@ -171,7 +174,7 @@ func _update_rotation(dir: Vector2) -> void:
 func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
-			_target.take_damage(damage, _move_direction)
+			_target.take_damage(dhp, mhp, amp, _last_dir)
 			_remove()
 			return true
 
@@ -180,7 +183,7 @@ func _try_hit() -> bool:
 		if e == null or not e._alive:
 			continue
 		if global_position.distance_to(e.global_position) <= hit_radius:
-			e.take_damage(damage, _move_direction)
+			e.take_damage(dhp, mhp, amp, _last_dir)
 			_remove()
 			return true
 	return false

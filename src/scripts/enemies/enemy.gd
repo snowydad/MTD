@@ -166,15 +166,30 @@ func hit(direction: Vector2, amount: float) -> void:
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
-func take_damage(amount: float, impact_direction: Vector2 = Vector2.ZERO) -> void:
+## Урон по пулам: amp→AP, mhp→MP, dhp→HP.
+## HP получает урон только если AP<=0 и MP<=0 (сначала все защиты).
+func take_damage(dhp: float = 0.0, mhp: float = 0.0, amp: float = 0.0, impact_direction: Vector2 = Vector2.ZERO) -> void:
 	if not _alive or _dying:
 		return
 
-	# Hit вызывается из центрального обработчика урона.
-	if impact_direction.length_squared() > 0.0001:
-		hit(impact_direction, amount)
+	var total := maxf(dhp, 0.0) + maxf(mhp, 0.0) + maxf(amp, 0.0)
+	if total > 0.0:
+		var dir := impact_direction
+		if dir.length_squared() < 0.0001:
+			dir = Vector2(0, -1)  # fallback: от стены вверх
+		hit(dir, total)
 
-	hp -= amount
+	# 1) броня
+	if amp > 0.0 and ap > 0.0:
+		var used_ap := minf(ap, amp)
+		ap -= used_ap
+	# 2) маг. защита
+	if mhp > 0.0 and mp > 0.0:
+		var used_mp := minf(mp, mhp)
+		mp -= used_mp
+	# 3) HP — только когда обе защиты сняты
+	if dhp > 0.0 and ap <= 0.0 and mp <= 0.0:
+		hp -= dhp
 
 	if hp <= 0.0:
 		_start_die()

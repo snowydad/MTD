@@ -15,7 +15,9 @@ signal landed(unit: Unit)
 @export var unit_type: UnitType = UnitType.ARCHER
 @export var level: int = 1
 
-var damage: float = 10.0
+var dhp: float = 0.0  # урон по HP
+var mhp: float = 0.0  # урон по MP (маг. защита)
+var amp: float = 0.0  # урон по AP (броня)
 var attack_speed: float = 1.0
 var attack_range: float = 300.0
 var splash_radius: float = 0.0
@@ -76,20 +78,24 @@ func _apply_stats() -> void:
 		push_warning("GameData: нет статов %s lv%d" % [_type_key(), level])
 		return
 
-	damage = float(base.get("damage", 10.0))
+	dhp = float(base.get("dhp", base.get("damage", 0.0)))
+	mhp = float(base.get("mhp", 0.0))
+	amp = float(base.get("amp", 0.0))
 	attack_speed = float(base.get("attack_speed", 1.0))
 	attack_range = float(base.get("range", 300.0))
 	splash_radius = float(base.get("splash_radius", 0.0))
 	accuracy = 1.0
 
-	# Глобальные перки (с Main). setup() может вызываться до add_child → tree == null
 	var tree := get_tree()
 	if tree == null:
 		return
 	var main := tree.get_first_node_in_group("game_main") as Node
 	if main != null and main.has_method("get_perk_multipliers"):
 		var m: Dictionary = main.get_perk_multipliers()
-		damage *= float(m.get("damage", 1.0))
+		var dmul := float(m.get("damage", 1.0))
+		dhp *= dmul
+		mhp *= dmul
+		amp *= dmul
 		attack_range *= float(m.get("range", 1.0))
 		attack_speed *= float(m.get("speed", 1.0))
 		accuracy = float(m.get("accuracy", 1.0))
@@ -114,7 +120,7 @@ func upgrade_to_level(new_level: int) -> void:
 	level = new_level
 	_apply_stats()
 	_apply_visual_level()
-	print("Unit upgraded → Lv.%d  dmg=%.1f  range=%.0f" % [level, damage, attack_range])
+	print("Unit upgraded → Lv.%d  dhp=%.1f mhp=%.1f amp=%.1f range=%.0f" % [level, dhp, mhp, amp, attack_range])
 
 
 func _to_stats_type(t: UnitType) -> UnitStats.UnitType:
@@ -212,10 +218,10 @@ func _fire_at(target: Enemy) -> void:
 	# Снаряды принимают разный launch: стрела / фаербол / бомба
 	match unit_type:
 		UnitType.ARCHER:
-			proj.launch(from, target, damage, accuracy, arrow_flight_time)
+			proj.launch(from, target, dhp, mhp, amp, accuracy, arrow_flight_time)
 		UnitType.MAGE:
-			proj.launch(from, target, damage, accuracy, level)
+			proj.launch(from, target, dhp, mhp, amp, accuracy, level)
 		UnitType.CANNON:
-			proj.launch(from, target, damage, accuracy, level, splash_radius)
+			proj.launch(from, target, dhp, mhp, amp, accuracy, level, splash_radius)
 		_:
-			proj.launch(from, target, damage, accuracy)
+			proj.launch(from, target, dhp, mhp, amp, accuracy)

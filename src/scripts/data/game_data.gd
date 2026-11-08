@@ -133,8 +133,12 @@ static func _load_units() -> void:
 			var st = levels[lv_key]
 			if typeof(st) != TYPE_DICTIONARY:
 				continue
+			# legacy "damage" → dhp if dhp missing
+			var dhp_v := float(st.get("dhp", st.get("damage", 0.0)))
 			_units[tname][str(lv_key)] = {
-				"damage": float(st.get("damage", 10.0)),
+				"dhp": dhp_v,
+				"mhp": float(st.get("mhp", 0.0)),
+				"amp": float(st.get("amp", 0.0)),
 				"attack_speed": float(st.get("attack_speed", 1.0)),
 				"range": float(st.get("range", 300.0)),
 				"splash_radius": float(st.get("splash_radius", 0.0)),

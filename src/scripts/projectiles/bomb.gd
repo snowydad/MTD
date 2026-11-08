@@ -14,7 +14,9 @@ const Z_DECOR := 10
 @export var hit_radius: float = 36.0
 @export var stuck_lifetime: float = 2.5
 
-var damage: float = 25.0
+var dhp: float = 0.0
+var mhp: float = 0.0
+var amp: float = 0.0
 var splash_radius: float = 90.0
 var accuracy: float = 1.0
 var level: int = 1
@@ -25,6 +27,7 @@ var _arc: float = 0.0
 var _duration: float = 0.6
 var _elapsed: float = 0.0
 var _prev: Vector2 = Vector2.ZERO
+var _last_dir: Vector2 = Vector2(0, -1)
 var _flying: bool = true
 var _stuck: bool = false
 var _stuck_t: float = 0.0
@@ -32,11 +35,13 @@ var _stuck_t: float = 0.0
 @onready var sprite: Sprite2D = $Sprite2D
 
 
-func launch(from_global: Vector2, target: Enemy, dmg: float, acc: float = 1.0, lvl: int = 1, splash: float = 90.0) -> void:
+func launch(from_global: Vector2, target: Enemy, p_dhp: float = 0.0, p_mhp: float = 0.0, p_amp: float = 0.0, acc: float = 1.0, lvl: int = 1, splash: float = 90.0) -> void:
 	global_position = from_global
 	_from = from_global
 	_prev = from_global
-	damage = dmg
+	dhp = p_dhp
+	mhp = p_mhp
+	amp = p_amp
 	accuracy = maxf(acc, 0.05)
 	level = lvl
 	splash_radius = splash
@@ -112,43 +117,39 @@ func _process(delta: float) -> void:
 	_prev = pos
 	global_position = pos
 	if d.length_squared() > 0.2:
+		_last_dir = d
 		rotation = d.angle() + PI * 0.5
 
-	if _try_hit(d):
+	if _try_hit():
 		return
 	if u >= 1.0:
-		_explode(null, Vector2.ZERO)
+		_explode(null)
 		_stick()
 
 
-func _try_hit(impact_direction: Vector2) -> bool:
+func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
-			_explode(_target, impact_direction)
+			_explode(_target)
 			queue_free()
 			return true
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e._alive and global_position.distance_to(e.global_position) <= hit_radius:
-			_explode(e, impact_direction)
+			_explode(e)
 			queue_free()
 			return true
 	return false
 
 
-func _explode(primary: Enemy, impact_direction: Vector2) -> void:
+func _explode(primary: Enemy) -> void:
 	var origin := global_position
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or not e._alive:
 			continue
 		if origin.distance_to(e.global_position) <= splash_radius:
-			var hit_direction := impact_direction
-			if e != primary or hit_direction.length_squared() < 0.001:
-				hit_direction = e.global_position - origin
-			if hit_direction.length_squared() < 0.001:
-				hit_direction = Vector2.UP
-			e.take_damage(damage, hit_direction.normalized())
+			e.take_damage(dhp, mhp, amp, _last_dir)
 
 
 func _stick() -> void:

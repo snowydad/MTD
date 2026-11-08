@@ -11,7 +11,9 @@ const Z_PROJECTILE := 25
 @export var hit_radius: float = 40.0
 @export var wave_count: float = 2.0
 
-var damage: float = 10.0
+var dhp: float = 0.0
+var mhp: float = 0.0
+var amp: float = 0.0
 var accuracy: float = 1.0
 var level: int = 1
 var _target: Enemy = null
@@ -20,19 +22,20 @@ var _to: Vector2 = Vector2.ZERO
 var _duration: float = 0.5
 var _elapsed: float = 0.0
 var _prev: Vector2 = Vector2.ZERO
-var _move_direction: Vector2 = Vector2.UP
+var _last_dir: Vector2 = Vector2(0, -1)
 var _amp: float = 40.0
 var _alive: bool = true
 
 @onready var sprite: Sprite2D = $Sprite2D
 
 
-func launch(from_global: Vector2, target: Enemy, dmg: float, acc: float = 1.0, lvl: int = 1) -> void:
+func launch(from_global: Vector2, target: Enemy, p_dhp: float = 0.0, p_mhp: float = 0.0, p_amp: float = 0.0, acc: float = 1.0, lvl: int = 1) -> void:
 	global_position = from_global
 	_from = from_global
 	_prev = from_global
-	_move_direction = Vector2.UP
-	damage = dmg
+	dhp = p_dhp
+	mhp = p_mhp
+	amp = p_amp
 	accuracy = maxf(acc, 0.05)
 	level = lvl
 	_target = target
@@ -107,8 +110,8 @@ func _process(delta: float) -> void:
 	_prev = pos
 	global_position = pos
 	if d.length_squared() > 0.2:
+		_last_dir = d
 		rotation = d.angle() + PI * 0.5
-		_move_direction = d.normalized()
 	if _try_hit() or u >= 1.0:
 		_alive = false
 		queue_free()
@@ -117,11 +120,11 @@ func _process(delta: float) -> void:
 func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
-			_target.take_damage(damage, _move_direction)
+			_target.take_damage(dhp, mhp, amp, _last_dir)
 			return true
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e._alive and global_position.distance_to(e.global_position) <= hit_radius:
-			e.take_damage(damage, _move_direction)
+			e.take_damage(dhp, mhp, amp, _last_dir)
 			return true
 	return false
