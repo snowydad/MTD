@@ -123,17 +123,6 @@ func upgrade_to_level(new_level: int) -> void:
 	print("Unit upgraded → Lv.%d  dhp=%.1f mhp=%.1f amp=%.1f range=%.0f" % [level, dhp, mhp, amp, attack_range])
 
 
-func _to_stats_type(t: UnitType) -> UnitStats.UnitType:
-	match t:
-		UnitType.ARCHER:
-			return UnitStats.UnitType.ARCHER
-		UnitType.MAGE:
-			return UnitStats.UnitType.MAGE
-		UnitType.CANNON:
-			return UnitStats.UnitType.CANNON
-	return UnitStats.UnitType.ARCHER
-
-
 func play_spawn_jump(from_global: Vector2, to_global: Vector2) -> void:
 	global_position = from_global
 	target_global = to_global
