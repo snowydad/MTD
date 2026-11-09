@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/goblin_armor.png" id="2_tex"]
+
+[node name="GoblinArmor" type="Node2D"]
+script = ExtResource("1_enemy")
+max_hp = 30.0
+max_ap = 20.0
+max_mp = 0.0
+move_speed = 90.0
+gold_reward = 12
+zigzag_amplitude = 20.0
+zigzag_frequency = 0.25
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")

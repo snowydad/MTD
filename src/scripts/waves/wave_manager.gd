@@ -11,10 +11,16 @@ signal wave_cleared(wave_index: int)
 signal all_waves_complete
 
 const _GOBLIN_SWIFT_DEFAULT := preload("res://src/scenes/enemies/goblin_swift.tscn")
+const _GOBLIN_ARMOR_DEFAULT := preload("res://src/scenes/enemies/goblin_armor.tscn")
+const _GOBLIN_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_mage.tscn")
+const _GOBLIN_ARMOR_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_armor_mage.tscn")
 
 @export var target_y: float = 2070.0
 @export var goblin_scene: PackedScene
 @export var goblin_swift_scene: PackedScene
+@export var goblin_armor_scene: PackedScene
+@export var goblin_mage_scene: PackedScene
+@export var goblin_armor_mage_scene: PackedScene
 @export var orc_scene: PackedScene
 @export var spawn_parent_path: NodePath = ^"../Enemies"
 @export var pause_between_waves: float = 2.0
@@ -127,6 +133,12 @@ func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> 
 			scene = orc_scene
 		"goblin_swift":
 			scene = goblin_swift_scene if goblin_swift_scene != null else _GOBLIN_SWIFT_DEFAULT
+		"goblin_armor":
+			scene = goblin_armor_scene if goblin_armor_scene != null else _GOBLIN_ARMOR_DEFAULT
+		"goblin_mage":
+			scene = goblin_mage_scene if goblin_mage_scene != null else _GOBLIN_MAGE_DEFAULT
+		"goblin_armor_mage":
+			scene = goblin_armor_mage_scene if goblin_armor_mage_scene != null else _GOBLIN_ARMOR_MAGE_DEFAULT
 		"goblin":
 			scene = goblin_scene
 		_:
