@@ -150,6 +150,8 @@ func _explode(primary: Enemy) -> void:
 			continue
 		if origin.distance_to(e.global_position) <= splash_radius:
 			e.take_damage(dhp, mhp, amp, _last_dir)
+			if e.has_method("apply_slow"):
+				e.apply_slow(float(level))
 
 
 func _stick() -> void:

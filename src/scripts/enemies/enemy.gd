@@ -48,6 +48,7 @@ var _time: float = 0.0
 var _alive: bool = true
 var _dying: bool = false
 var _freeze_left: float = 0.0
+var _slow_left: float = 0.0
 var _pre_freeze_modulate: Color = Color.WHITE
 
 var _current_speed: float = 0.0
@@ -94,6 +95,7 @@ func setup(spawn_pos: Vector2, target_y: float) -> void:
 	_alive = true
 	_dying = false
 	_freeze_left = 0.0
+	_slow_left = 0.0
 	_time = randf() * TAU
 
 	_current_speed = move_speed
@@ -119,6 +121,24 @@ func _process(delta: float) -> void:
 		_freeze_left -= delta
 		if _freeze_left <= 0.0:
 			_freeze_left = 0.0
+			if _slow_left > 0.0:
+				_current_speed = move_speed * 0.5
+				modulate = Color(1.0, 0.75, 0.4, modulate.a)
+			else:
+				_current_speed = move_speed
+				modulate = Color(1, 1, 1, modulate.a)
+			_update_spine_animation()
+		# Полный стоп: не двигаем Y и не крутим зигзаг по X
+		global_position = Vector2(
+			_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
+			_base_y
+		) + _hit_offset
+		return
+
+	if _slow_left > 0.0:
+		_slow_left -= delta
+		if _slow_left <= 0.0:
+			_slow_left = 0.0
 			_current_speed = move_speed
 			modulate = Color(1, 1, 1, modulate.a)
 			_update_spine_animation()
@@ -169,8 +189,8 @@ func hit(direction: Vector2, amount: float) -> void:
 	_current_speed = 0.0
 	_update_spine_animation()
 
-	# Не сбрасываем заморозку хитом
-	if _freeze_left > 0.0:
+	# Не сбрасываем freeze/slow хитом
+	if _freeze_left > 0.0 or _slow_left > 0.0:
 		return
 
 	_speed_tween = create_tween()
@@ -192,6 +212,22 @@ func apply_freeze(duration: float) -> void:
 	_speed_tween = null
 	_current_speed = 0.0
 	modulate = Color(0.55, 0.85, 1.0, modulate.a)
+	_update_spine_animation()
+
+
+## Slowdown (мортира): speed/2 на duration сек.
+func apply_slow(duration: float) -> void:
+	if not _alive or _dying or duration <= 0.0:
+		return
+	_slow_left = maxf(_slow_left, duration)
+	if _speed_tween and _speed_tween.is_running():
+		_speed_tween.kill()
+	_speed_tween = null
+	# Freeze сильнее slow
+	if _freeze_left > 0.0:
+		return
+	_current_speed = move_speed * 0.5
+	modulate = Color(1.0, 0.75, 0.4, modulate.a)
 	_update_spine_animation()
 
 
