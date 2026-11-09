@@ -47,6 +47,8 @@ var _hit_tween: Tween = null
 var _time: float = 0.0
 var _alive: bool = true
 var _dying: bool = false
+var _freeze_left: float = 0.0
+var _pre_freeze_modulate: Color = Color.WHITE
 
 var _current_speed: float = 0.0
 var _speed_tween: Tween = null
@@ -91,9 +93,11 @@ func setup(spawn_pos: Vector2, target_y: float) -> void:
 	mp = max_mp
 	_alive = true
 	_dying = false
+	_freeze_left = 0.0
 	_time = randf() * TAU
 
 	_current_speed = move_speed
+	modulate = Color(1, 1, 1, 1)
 
 	if _speed_tween and _speed_tween.is_running():
 		_speed_tween.kill()
@@ -110,6 +114,14 @@ func _process(delta: float) -> void:
 		return
 	if not _alive:
 		return
+
+	if _freeze_left > 0.0:
+		_freeze_left -= delta
+		if _freeze_left <= 0.0:
+			_freeze_left = 0.0
+			_current_speed = move_speed
+			modulate = Color(1, 1, 1, modulate.a)
+			_update_spine_animation()
 
 	_time += delta
 	_base_y += _current_speed * delta
@@ -157,6 +169,10 @@ func hit(direction: Vector2, amount: float) -> void:
 	_current_speed = 0.0
 	_update_spine_animation()
 
+	# Не сбрасываем заморозку хитом
+	if _freeze_left > 0.0:
+		return
+
 	_speed_tween = create_tween()
 	_speed_tween.tween_property(
 		self,
@@ -164,6 +180,19 @@ func hit(direction: Vector2, amount: float) -> void:
 		move_speed,
 		hit_speed_recovery_duration
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+## Заморозка (маг): на duration сек скорость 0.
+func apply_freeze(duration: float) -> void:
+	if not _alive or _dying or duration <= 0.0:
+		return
+	_freeze_left = maxf(_freeze_left, duration)
+	if _speed_tween and _speed_tween.is_running():
+		_speed_tween.kill()
+	_speed_tween = null
+	_current_speed = 0.0
+	modulate = Color(0.55, 0.85, 1.0, modulate.a)
+	_update_spine_animation()
 
 
 ## Урон по пулам: amp→AP, mhp→MP, dhp→HP.

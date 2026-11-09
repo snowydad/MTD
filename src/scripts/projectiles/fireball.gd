@@ -121,10 +121,13 @@ func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
 			_target.take_damage(dhp, mhp, amp, _last_dir)
+			if _target.has_method("apply_freeze"):
+				_target.apply_freeze(float(level))
 			return true
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e._alive and global_position.distance_to(e.global_position) <= hit_radius:
 			e.take_damage(dhp, mhp, amp, _last_dir)
+			e.apply_freeze(float(level))
 			return true
 	return false
