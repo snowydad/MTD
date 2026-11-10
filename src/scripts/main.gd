@@ -375,9 +375,14 @@ func _on_wave_started(wave_index: int, wave_name: String) -> void:
 
 
 func _on_all_waves_complete() -> void:
-	print("=== LEVEL ", _level_id, " COMPLETE  gold=", gold, " ===")
+	## Оставшееся HP стены → золото
+	var hp_bonus := int(round(tower_hp))
+	if hp_bonus > 0:
+		gold += hp_bonus
+		_update_gold_label()
+	print("=== LEVEL ", _level_id, " COMPLETE  gold=", gold, " (+", hp_bonus, " from tower HP) ===")
 	wave_label.text = "Ур.%d — победа" % _level_id
-	_show_victory()
+	_show_victory(hp_bonus)
 
 
 func _ensure_victory_panel() -> void:
@@ -417,10 +422,13 @@ func _ensure_victory_panel() -> void:
 	_victory_label = lb
 
 
-func _show_victory() -> void:
+func _show_victory(hp_bonus: int = 0) -> void:
 	_ensure_victory_panel()
 	if _victory_label:
-		_victory_label.text = "Уровень %d пройден!\nЗолото: %d" % [_level_id, gold]
+		if hp_bonus > 0:
+			_victory_label.text = "Уровень %d пройден!\nHP стены +%d золота\nЗолото: %d" % [_level_id, hp_bonus, gold]
+		else:
+			_victory_label.text = "Уровень %d пройден!\nЗолото: %d" % [_level_id, gold]
 	if _victory_panel:
 		_victory_panel.visible = true
 
