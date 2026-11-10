@@ -1,7 +1,7 @@
-type	max_hp	max_ap	max_mp	move_speed	damage_to_wall	gold_reward	zigzag_amplitude	zigzag_frequency
-goblin	30	0	0	100	5	10	20	0.25
-goblin_armor	30	20	0	101	5	12	21	0.26
-goblin_mage	30	0	20	102	5	12	22	0.27
-goblin_armor_mage	30	20	20	103	5	15	23	0.28
-goblin_swift	30	0	0	150	5	10	60	0.25
-orc	80	20	0	55	12	15	15	0.15
+type	max_hp	max_ap	max_mp	move_speed	damage_to_wall	gold_reward	zigzag_amplitude	zigzag_frequency	wall_attack
+goblin	30	0	0	100	5	10	20	0.25	20
+goblin_armor	30	20	0	101	5	12	21	0.26	20
+goblin_mage	30	0	20	102	5	12	22	0.27	20
+goblin_armor_mage	30	20	20	103	5	15	23	0.28	20
+goblin_swift	30	0	0	150	5	10	60	0.25	20
+orc	80	0	0	55	12	15	15	0.15	20

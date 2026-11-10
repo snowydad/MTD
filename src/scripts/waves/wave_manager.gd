@@ -15,7 +15,7 @@ const _GOBLIN_ARMOR_DEFAULT := preload("res://src/scenes/enemies/goblin_armor.ts
 const _GOBLIN_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_mage.tscn")
 const _GOBLIN_ARMOR_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_armor_mage.tscn")
 
-@export var target_y: float = 2070.0
+@export var wall_y: float = 2070.0
 @export var goblin_scene: PackedScene
 @export var goblin_swift_scene: PackedScene
 @export var goblin_armor_scene: PackedScene
@@ -153,7 +153,7 @@ func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> 
 	var x := randf_range(x_min, x_max)
 	var pos := Vector2(x, spawn_y)
 	_spawn_parent.add_child(enemy)
-	enemy.setup(pos, target_y)
+	enemy.setup(pos, wall_y)
 	enemy.hp = enemy.max_hp
 	enemy.reached_wall.connect(_on_enemy_resolved)
 	enemy.died.connect(_on_enemy_resolved)

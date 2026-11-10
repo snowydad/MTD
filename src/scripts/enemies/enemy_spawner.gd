@@ -5,7 +5,7 @@ extends Node2D
 ## Дефолты в скрипте — запасные, если в tscn ничего не записано.
 
 @export var enemy_scene: PackedScene
-@export var target_y: float = 2070.0
+@export var wall_y: float = 2070.0
 
 @export_group("Spawn")
 @export var auto_start: bool = true
@@ -62,7 +62,7 @@ func _spawn_one() -> void:
 	var x := randf_range(spawn_x_min, spawn_x_max)
 	var pos := Vector2(x, spawn_y)
 	add_child(enemy)
-	enemy.setup(pos, target_y)
+	enemy.setup(pos, wall_y)
 	enemy.reached_wall.connect(_on_reached_wall)
 	enemy.died.connect(_on_died)
 	_spawned += 1

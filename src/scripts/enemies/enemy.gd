@@ -12,6 +12,8 @@ extends Node2D
 @export var move_speed: float = 180.0
 @export var damage_to_wall: float = 5.0
 @export var gold_reward: int = 10
+## Дистанция до стены (px), на которой останавливается / бьёт. 0 = вплотную к wall_y.
+@export var wall_attack: float = 0.0
 
 @export_group("Zigzag")
 @export var zigzag_amplitude: float = 40.0
@@ -39,7 +41,8 @@ extends Node2D
 var hp: float = 30.0
 var ap: float = 0.0
 var mp: float = 0.0
-var _target_y: float = 2070.0
+var _wall_y: float = 2070.0
+var _stop_y: float = 2070.0
 var _base_x: float = 0.0
 var _base_y: float = 0.0
 var _hit_offset: Vector2 = Vector2.ZERO
@@ -78,7 +81,7 @@ func _ready() -> void:
 		_update_spine_animation()
 
 
-func setup(spawn_pos: Vector2, target_y: float) -> void:
+func setup(spawn_pos: Vector2, wall_y: float) -> void:
 	global_position = spawn_pos
 	_base_x = spawn_pos.x
 	_base_y = spawn_pos.y
@@ -88,7 +91,9 @@ func setup(spawn_pos: Vector2, target_y: float) -> void:
 		_hit_tween.kill()
 	_hit_tween = null
 
-	_target_y = target_y
+	_wall_y = wall_y
+	# Останавливается за wall_attack пикселей до верха стены
+	_stop_y = wall_y - wall_attack
 	hp = max_hp
 	ap = max_ap
 	mp = max_mp
@@ -153,7 +158,7 @@ func _process(delta: float) -> void:
 
 	_update_spine_animation()
 
-	if _base_y >= _target_y:
+	if _base_y >= _stop_y:
 		_alive = false
 		reached_wall.emit(self)
 		queue_free()

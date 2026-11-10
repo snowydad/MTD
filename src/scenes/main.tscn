@@ -11,30 +11,29 @@
 [ext_resource type="PackedScene" uid="uid://cmscuvrq2lmfw" path="res://src/scenes/enemies/goblin_swift.tscn" id="5_swift"]
 [ext_resource type="PackedScene" uid="uid://corc001" path="res://src/scenes/enemies/orc.tscn" id="6_orc"]
 
-[node name="Main" type="Node2D" unique_id=915476314]
+[node name="Main" type="Node2D" unique_id=597057756]
 script = ExtResource("1_main")
-wall_y = 1700.0
 fill_rate = 1.0
 
-[node name="World" type="Node2D" parent="." unique_id=642445264]
+[node name="World" type="Node2D" parent="." unique_id=392886198]
 
-[node name="Background" type="Sprite2D" parent="World" unique_id=1262255854]
+[node name="Background" type="Sprite2D" parent="World" unique_id=1964330273]
 texture = ExtResource("2_bg")
 centered = false
 
-[node name="Wall" type="Sprite2D" parent="World" unique_id=1332251129]
+[node name="Wall" type="Sprite2D" parent="World" unique_id=1908711004]
 z_index = 30
-position = Vector2(562, 1810)
+position = Vector2(562, 2180)
 texture = ExtResource("3_wall")
 
-[node name="Decor" type="Node2D" parent="World" unique_id=1492407906]
+[node name="Decor" type="Node2D" parent="World" unique_id=794691802]
 z_index = 10
 
-[node name="Enemies" type="Node2D" parent="World" unique_id=1174564390]
+[node name="Enemies" type="Node2D" parent="World" unique_id=1862623280]
 z_index = 20
 y_sort_enabled = true
 
-[node name="WaveManager" type="Node" parent="World" unique_id=1861486985]
+[node name="WaveManager" type="Node" parent="World" unique_id=488722343]
 script = ExtResource("4_wave")
 goblin_scene = ExtResource("5_goblin")
 goblin_swift_scene = ExtResource("5_swift")
@@ -43,14 +42,14 @@ goblin_mage_scene = ExtResource("5_gmage")
 goblin_armor_mage_scene = ExtResource("5_am")
 orc_scene = ExtResource("6_orc")
 
-[node name="Units" type="Node2D" parent="World" unique_id=236413237]
+[node name="Units" type="Node2D" parent="World" unique_id=1218233431]
 z_index = 40
 y_sort_enabled = true
 
-[node name="UI" type="CanvasLayer" parent="." unique_id=184276830]
+[node name="UI" type="CanvasLayer" parent="." unique_id=2098515454]
 layer = 10
 
-[node name="HUD" type="Control" parent="UI" unique_id=1465481771]
+[node name="HUD" type="Control" parent="UI" unique_id=1958921392]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,7 +58,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="GoldLabel" type="Label" parent="UI/HUD" unique_id=1037096197]
+[node name="GoldLabel" type="Label" parent="UI/HUD" unique_id=80149815]
 layout_mode = 1
 offset_left = 24.0
 offset_top = 24.0
@@ -72,14 +71,14 @@ theme_override_font_sizes/font_size = 48
 text = "0"
 vertical_alignment = 1
 
-[node name="TopBar" type="HBoxContainer" parent="UI/HUD" unique_id=720946433]
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD" unique_id=531216532]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 120.0
 grow_horizontal = 2
 
-[node name="WaveLabel" type="Label" parent="UI/HUD/TopBar" unique_id=713407562]
+[node name="WaveLabel" type="Label" parent="UI/HUD/TopBar" unique_id=1335861245]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 42
@@ -87,7 +86,7 @@ text = "Волна 1 / 5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PerkPanel" type="HBoxContainer" parent="UI/HUD" unique_id=1980631780]
+[node name="PerkPanel" type="HBoxContainer" parent="UI/HUD" unique_id=382892711]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -104,28 +103,28 @@ grow_vertical = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="BtnPerkRange" type="Button" parent="UI/HUD/PerkPanel" unique_id=1621867595]
+[node name="BtnPerkRange" type="Button" parent="UI/HUD/PerkPanel" unique_id=983872840]
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Range
 +15%"
 
-[node name="BtnPerkSpeed" type="Button" parent="UI/HUD/PerkPanel" unique_id=1742642249]
+[node name="BtnPerkSpeed" type="Button" parent="UI/HUD/PerkPanel" unique_id=2028071205]
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Speed
 +15%"
 
-[node name="BtnPerkDamage" type="Button" parent="UI/HUD/PerkPanel" unique_id=414941328]
+[node name="BtnPerkDamage" type="Button" parent="UI/HUD/PerkPanel" unique_id=1345371387]
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Damage
 +15%"
 
-[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=1602436430]
+[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=1142565595]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -136,28 +135,28 @@ grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
 
-[node name="BtnArcher" type="Button" parent="UI/HUD/BottomBar" unique_id=1058462813]
+[node name="BtnArcher" type="Button" parent="UI/HUD/BottomBar" unique_id=915484208]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Лучник
 12"
 
-[node name="BtnMage" type="Button" parent="UI/HUD/BottomBar" unique_id=1546700567]
+[node name="BtnMage" type="Button" parent="UI/HUD/BottomBar" unique_id=19755093]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Маг
 16"
 
-[node name="BtnCannon" type="Button" parent="UI/HUD/BottomBar" unique_id=1630027705]
+[node name="BtnCannon" type="Button" parent="UI/HUD/BottomBar" unique_id=461433621]
 custom_minimum_size = Vector2(300, 220)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Мортира
 20"
 
-[node name="TowerHP" type="ProgressBar" parent="UI/HUD" unique_id=1246186134]
+[node name="TowerHP" type="ProgressBar" parent="UI/HUD" unique_id=230888751]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -173,7 +172,7 @@ grow_vertical = 0
 value = 100.0
 show_percentage = false
 
-[node name="TowerHPLabel" type="Label" parent="UI/HUD" unique_id=908066787]
+[node name="TowerHPLabel" type="Label" parent="UI/HUD" unique_id=817289219]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5

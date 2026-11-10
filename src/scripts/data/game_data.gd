@@ -54,6 +54,7 @@ static func _load_enemies() -> void:
 			"gold_reward": int(c[6]),
 			"zigzag_amplitude": float(c[7]),
 			"zigzag_frequency": float(c[8]),
+			"wall_attack": float(c[9]) if c.size() >= 10 else 0.0,
 		}
 	f.close()
 	print("GameData: enemies ", _enemies.keys())
@@ -104,6 +105,7 @@ static func apply_to_enemy(enemy: Node, type: String) -> void:
 	enemy.set("gold_reward", int(s["gold_reward"]))
 	enemy.set("zigzag_amplitude", float(s["zigzag_amplitude"]))
 	enemy.set("zigzag_frequency", float(s["zigzag_frequency"]))
+	enemy.set("wall_attack", float(s.get("wall_attack", 0.0)))
 	enemy.set("hp", float(s["max_hp"]))
 	enemy.set("ap", float(s.get("max_ap", 0.0)))
 	enemy.set("mp", float(s.get("max_mp", 0.0)))
