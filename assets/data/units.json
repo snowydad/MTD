@@ -1,17 +1,17 @@
 {
   "archer": {
 	"1": { "dhp": 12, "mhp": 2, "amp": 2, "attack_speed": 0.5, "range": 700, "splash_radius": 0 },
-	"2": { "dhp": 24, "mhp": 4, "amp": 4, "attack_speed": 0.8, "range": 720, "splash_radius": 0 },
-	"3": { "dhp": 48, "mhp": 6, "amp": 6, "attack_speed": 1.3, "range": 740, "splash_radius": 0 }
+	"2": { "dhp": 22, "mhp": 3.7, "amp": 3.7, "attack_speed": 0.82, "range": 720, "splash_radius": 0 },
+	"3": { "dhp": 38, "mhp": 6.4, "amp": 6.4, "attack_speed": 1.42, "range": 740, "splash_radius": 0 }
   },
   "mage": {
-	"1": { "dhp": 4, "mhp": 18, "amp": 2, "attack_speed": 0.4, "range": 920, "splash_radius": 0 },
-	"2": { "dhp": 6, "mhp": 36, "amp": 4, "attack_speed": 0.7, "range": 920, "splash_radius": 0 },
-	"3": { "dhp": 8, "mhp": 72, "amp": 6, "attack_speed": 1.1, "range": 940, "splash_radius": 0 }
+	"1": { "dhp": 4, "mhp": 12, "amp": 2, "attack_speed": 0.4, "range": 920, "splash_radius": 0 },
+	"2": { "dhp": 6, "mhp": 18, "amp": 3, "attack_speed": 0.8, "range": 920, "splash_radius": 0 },
+	"3": { "dhp": 12, "mhp": 38, "amp": 6, "attack_speed": 1.2, "range": 940, "splash_radius": 0 }
   },
   "cannon": {
-	"1": { "dhp": 24, "mhp": 4, "amp": 24, "attack_speed": 0.3, "range": 500, "splash_radius": 100 },
-	"2": { "dhp": 48, "mhp": 6, "amp": 48, "attack_speed": 0.5, "range": 520, "splash_radius": 150 },
-	"3": { "dhp": 72, "mhp": 8, "amp": 72, "attack_speed": 0.7, "range": 540, "splash_radius": 200 }
+	"1": { "dhp": 24, "mhp": 4, "amp": 32, "attack_speed": 0.3, "range": 500, "splash_radius": 100 },
+	"2": { "dhp": 54, "mhp": 9, "amp": 72, "attack_speed": 0.4, "range": 520, "splash_radius": 150 },
+	"3": { "dhp": 108, "mhp": 18, "amp": 144, "attack_speed": 0.6, "range": 540, "splash_radius": 200 }
   }
 }
