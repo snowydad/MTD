@@ -2,12 +2,12 @@
 
 importer="spine.skel"
 type="SpineSkeletonFileResource"
-uid="uid://daqxcmjyaw1v1"
+uid="uid://btpc8mfvu68yp"
 valid=false
 
 [deps]
 
-source_file="res://assets/sprites/enemies/goblin/skeleton.skel"
+source_file="res://assets/sprites/enemies/goblin/goblin.skel"
 
 [params]
 

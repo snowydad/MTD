@@ -2,8 +2,32 @@
 
 [ext_resource type="Script" uid="uid://l5gvo6ju3fi" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
 [ext_resource type="Texture2D" uid="uid://dgnf70foc1o0n" path="res://assets/sprites/enemies/goblin.png" id="2_tex"]
-[ext_resource type="SpineSkeletonDataResource" uid="uid://up2wrsrxiw4i" path="res://assets/sprites/enemies/goblin/new_spine_skeleton_data_resource.tres" id="3_k5cuv"]
-[ext_resource type="SpineSkeletonDataResource" uid="uid://b6e7kq0qkjbic" path="res://assets/sprites/enemies/mob/mob.tres" id="4_w4qt1"]
+[ext_resource type="SpineSkeletonDataResource" uid="uid://4fxil73a36s8" path="res://assets/sprites/enemies/goblin/goblin.tres" id="3_k5cuv"]
+
+[sub_resource type="SpineAnimationMix" id="SpineAnimationMix_u24ta"]
+from = "idle"
+to = "walk"
+mix = 0.1
+
+[sub_resource type="SpineAnimationMix" id="SpineAnimationMix_gh0n6"]
+from = "walk"
+to = "idle"
+mix = 0.1
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_k5cuv"]
+load_path = "res://.godot/imported/skeleton.png-1351581c23037dd4fdda6327db615b3f.ctex"
+
+[sub_resource type="SpineAtlasResource" id="SpineAtlasResource_w4qt1"]
+source_path = "res://assets/sprites/enemies/goblin/skeleton.atlas"
+textures = [SubResource("CompressedTexture2D_k5cuv")]
+
+[sub_resource type="SpineSkeletonFileResource" id="SpineSkeletonFileResource_rkgf8"]
+
+[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_2cvgc"]
+atlas_res = SubResource("SpineAtlasResource_w4qt1")
+skeleton_file_res = SubResource("SpineSkeletonFileResource_rkgf8")
+default_mix = 0.1
+animation_mixes = [SubResource("SpineAnimationMix_u24ta"), SubResource("SpineAnimationMix_gh0n6")]
 
 [node name="Goblin" type="Node2D" unique_id=636460816]
 script = ExtResource("1_enemy")
@@ -16,19 +40,19 @@ visible = false
 texture = ExtResource("2_tex")
 
 [node name="SpineSprite3" type="SpineSprite" parent="." unique_id=157551974]
+visible = false
+position = Vector2(0, 41)
+scale = Vector2(0.07, 0.07)
+skeleton_data_res = SubResource("SpineSkeletonDataResource_2cvgc")
+preview_skin = "Default"
+preview_animation = "walk"
+preview_frame = false
+preview_time = 0.0
+
+[node name="SpineSprite" type="SpineSprite" parent="." unique_id=2087501530]
+scale = Vector2(0.55, 0.55)
 skeleton_data_res = ExtResource("3_k5cuv")
 preview_skin = "Default"
 preview_animation = "walk"
 preview_frame = false
 preview_time = 0.0
-visible = false
-position = Vector2(0, 41)
-scale = Vector2(0.07, 0.07)
-
-[node name="SpineSprite" type="SpineSprite" parent="." unique_id=2087501530]
-skeleton_data_res = ExtResource("4_w4qt1")
-preview_skin = "Default"
-preview_animation = "walk"
-preview_frame = false
-preview_time = 0.0
-scale = Vector2(0.55, 0.55)

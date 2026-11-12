@@ -1,0 +1,15 @@
+[gd_resource type="SpineSkeletonDataResource" format=3 uid="uid://4fxil73a36s8"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://cc8ksh5dnnpry" path="res://assets/sprites/enemies/goblin/goblin.atlas" id="1_thwhd"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://btpc8mfvu68yp" path="res://assets/sprites/enemies/goblin/goblin.skel" id="2_16mto"]
+
+[sub_resource type="SpineAnimationMix" id="SpineAnimationMix_oedur"]
+from = "idle"
+to = "walk"
+mix = 0.1
+
+[resource]
+atlas_res = ExtResource("1_thwhd")
+skeleton_file_res = ExtResource("2_16mto")
+default_mix = 0.1
+animation_mixes = [SubResource("SpineAnimationMix_oedur")]

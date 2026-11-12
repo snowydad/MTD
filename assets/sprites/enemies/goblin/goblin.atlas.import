@@ -2,12 +2,12 @@
 
 importer="spine.atlas"
 type="SpineAtlasResource"
-uid="uid://bn14l0jgk3f08"
+uid="uid://cc8ksh5dnnpry"
 valid=false
 
 [deps]
 
-source_file="res://assets/sprites/enemies/goblin/skeleton.atlas"
+source_file="res://assets/sprites/enemies/goblin/goblin.atlas"
 
 [params]
 

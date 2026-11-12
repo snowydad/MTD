@@ -1,0 +1,14 @@
+goblin.png
+size:222,252
+filter:Linear,Linear
+black
+bounds:184,175,35,19
+body
+bounds:112,10,109,91
+rotate:90
+hand_r
+bounds:2,2,108,117
+head
+bounds:2,121,180,129
+mob_leg_r
+bounds:184,196,36,54

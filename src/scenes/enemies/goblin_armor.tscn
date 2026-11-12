@@ -1,17 +1,25 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ddy4lf8x7cm3d"]
 
-[ext_resource type="Script" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
-[ext_resource type="Texture2D" path="res://assets/sprites/enemies/goblin_armor.png" id="2_tex"]
+[ext_resource type="Script" uid="uid://l5gvo6ju3fi" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
+[ext_resource type="Texture2D" uid="uid://cnxqhf7bqkfp4" path="res://assets/sprites/enemies/goblin_armor.png" id="2_tex"]
+[ext_resource type="SpineSkeletonDataResource" uid="uid://b6e7kq0qkjbic" path="res://assets/sprites/enemies/mob/mob.tres" id="3_yyiyf"]
 
-[node name="GoblinArmor" type="Node2D"]
+[node name="GoblinArmor" type="Node2D" unique_id=1217896214]
 script = ExtResource("1_enemy")
-max_hp = 30.0
 max_ap = 20.0
-max_mp = 0.0
 move_speed = 90.0
 gold_reward = 12
 zigzag_amplitude = 20.0
 zigzag_frequency = 0.25
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=692449384]
+visible = false
 texture = ExtResource("2_tex")
+
+[node name="SpineSprite" type="SpineSprite" parent="." unique_id=1879400372]
+scale = Vector2(0.55, 0.55)
+skeleton_data_res = ExtResource("3_yyiyf")
+preview_skin = "Default"
+preview_animation = "walk"
+preview_frame = false
+preview_time = 0.0
