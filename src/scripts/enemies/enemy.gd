@@ -18,6 +18,8 @@ extends Node2D
 @export var attack_speed: float = 1.0
 ## Момент удара внутри цикла (сек от старта атаки) — под синхрон с анимацией.
 @export var attack_moment: float = 0.25
+## Полёт кинжала до стены (сек). 0 = урон сразу без полёта (мили).
+@export var dagger_flight_time: float = 0.35
 
 @export_group("Zigzag")
 @export var zigzag_amplitude: float = 40.0
@@ -61,6 +63,8 @@ var _pre_freeze_modulate: Color = Color.WHITE
 var _attacking: bool = false
 var _attack_timer: float = 0.0
 var _attack_damage_done: bool = false
+var _dagger_templates: Array[Sprite2D] = []
+var _dagger_throw_index: int = 0
 
 var _current_speed: float = 0.0
 var _speed_tween: Tween = null
@@ -86,6 +90,7 @@ func get_lead_speed() -> float:
 
 func _ready() -> void:
 	add_to_group("enemies")
+	_cache_dagger_templates()
 
 	if spine != null:
 		_spine_state = spine.get_animation_state()
@@ -133,6 +138,7 @@ func setup(spawn_pos: Vector2, wall_y: float) -> void:
 	if not is_in_group("enemies"):
 		add_to_group("enemies")
 
+	_cache_dagger_templates()
 	_update_spine_animation()
 
 
@@ -273,6 +279,60 @@ func apply_slow(duration: float) -> void:
 
 
 
+
+func _cache_dagger_templates() -> void:
+	_dagger_templates.clear()
+	for c in get_children():
+		if c is Sprite2D and "dagger" in str(c.name).to_lower():
+			var s := c as Sprite2D
+			_dagger_templates.append(s)
+			s.visible = false
+
+
+func _do_wall_attack_strike() -> void:
+	## Есть кинжалы в сцене → бросок; нет → мили (урон сразу).
+	if _dagger_templates.is_empty():
+		wall_hit.emit(self, damage_to_wall)
+		return
+	_throw_dagger()
+
+
+func _throw_dagger() -> void:
+	if _dagger_templates.is_empty():
+		wall_hit.emit(self, damage_to_wall)
+		return
+	var tmpl: Sprite2D = _dagger_templates[_dagger_throw_index % _dagger_templates.size()]
+	_dagger_throw_index += 1
+
+	var world: Node = get_parent()
+	if world == null:
+		world = self
+
+	var dagger: Sprite2D = tmpl.duplicate() as Sprite2D
+	world.add_child(dagger)
+	dagger.global_position = tmpl.global_position
+	dagger.global_scale = tmpl.global_scale
+	dagger.modulate = tmpl.modulate
+	dagger.visible = true
+	dagger.z_index = 20
+
+	var target := Vector2(dagger.global_position.x, _wall_y)
+	var dir := target - dagger.global_position
+	if dir.length_squared() > 0.01:
+		dagger.rotation = dir.angle() + PI * 0.5
+
+	var flight := maxf(dagger_flight_time, 0.05)
+	var tw := dagger.create_tween()
+	tw.set_parallel(false)
+	tw.tween_property(dagger, "global_position", target, flight).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(self) and _alive and not _dying:
+			wall_hit.emit(self, damage_to_wall)
+		if is_instance_valid(dagger):
+			dagger.queue_free()
+	)
+
+
 func _begin_wall_attack() -> void:
 	_attacking = true
 	_current_speed = 0.0
@@ -309,7 +369,7 @@ func _process_wall_attack(delta: float) -> void:
 	var moment := clampf(attack_moment, 0.0, maxf(attack_speed, 0.01))
 	if not _attack_damage_done and _attack_timer >= moment:
 		_attack_damage_done = true
-		wall_hit.emit(self, damage_to_wall)
+		_do_wall_attack_strike()
 
 	if _attack_timer >= maxf(attack_speed, 0.05):
 		_attack_timer = 0.0
