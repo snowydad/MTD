@@ -1,0 +1,13 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+uid="uid://dwh574j4i7wst"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/enemies/goblin_mage/goblin_mage.skel"
+
+[params]
+

@@ -1,0 +1,8 @@
+[gd_resource type="SpineSkeletonDataResource" format=3 uid="uid://c4njdu6askhmi"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://c4t1ov0h2atvo" path="res://assets/sprites/enemies/goblin_mage/goblin_mage.atlas" id="1_whoec"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://dwh574j4i7wst" path="res://assets/sprites/enemies/goblin_mage/goblin_mage.skel" id="2_oq5yp"]
+
+[resource]
+atlas_res = ExtResource("1_whoec")
+skeleton_file_res = ExtResource("2_oq5yp")

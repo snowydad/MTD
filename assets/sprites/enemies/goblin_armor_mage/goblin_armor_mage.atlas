@@ -1,0 +1,15 @@
+goblin_armor_mage.png
+size:273,206
+filter:Linear,Linear
+black
+bounds:234,53,35,19
+body
+bounds:161,74,110,130
+hand_l
+bounds:159,2,70,73
+rotate:90
+hand_r
+bounds:2,118,86,157
+rotate:90
+head
+bounds:2,7,155,109

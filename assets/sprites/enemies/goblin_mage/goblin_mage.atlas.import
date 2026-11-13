@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://c4t1ov0h2atvo"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/enemies/goblin_mage/goblin_mage.atlas"
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

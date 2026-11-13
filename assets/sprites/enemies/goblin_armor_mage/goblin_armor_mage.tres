@@ -1,0 +1,8 @@
+[gd_resource type="SpineSkeletonDataResource" format=3 uid="uid://3sn5ilnbqrg6"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://0l5sb5ywu0du" path="res://assets/sprites/enemies/goblin_armor_mage/goblin_armor_mage.atlas" id="1_wmd2f"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://db7upc0hh46cb" path="res://assets/sprites/enemies/goblin_armor_mage/goblin_armor_mage.skel" id="2_rj3ef"]
+
+[resource]
+atlas_res = ExtResource("1_wmd2f")
+skeleton_file_res = ExtResource("2_rj3ef")

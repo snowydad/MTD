@@ -1,0 +1,16 @@
+goblin_mage.png
+size:133,424
+filter:Linear,Linear
+black
+bounds:2,403,35,19
+body
+bounds:2,184,108,122
+rotate:90
+hand_r
+bounds:2,294,107,116
+rotate:90
+head
+bounds:2,2,180,129
+rotate:90
+overlay
+bounds:39,403,35,19

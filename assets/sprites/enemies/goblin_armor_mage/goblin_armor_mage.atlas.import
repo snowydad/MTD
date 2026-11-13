@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://0l5sb5ywu0du"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/enemies/goblin_armor_mage/goblin_armor_mage.atlas"
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"
