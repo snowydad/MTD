@@ -48,8 +48,8 @@ extends Node2D
 var hp: float = 30.0
 var ap: float = 0.0
 var mp: float = 0.0
-var _wall_y: float = 2070.0
-var _stop_y: float = 2070.0
+var _wall_y: float = 2000.0
+var _stop_y: float = 2000.0
 var _base_x: float = 0.0
 var _base_y: float = 0.0
 var _hit_offset: Vector2 = Vector2.ZERO

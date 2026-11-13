@@ -5,7 +5,7 @@ extends Node2D
 ## Дефолты в скрипте — запасные, если в tscn ничего не записано.
 
 @export var enemy_scene: PackedScene
-@export var wall_y: float = 2070.0
+@export var wall_y: float = 2000.0
 
 @export_group("Spawn")
 @export var auto_start: bool = true

@@ -15,7 +15,7 @@ const _GOBLIN_ARMOR_DEFAULT := preload("res://src/scenes/enemies/goblin_armor.ts
 const _GOBLIN_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_mage.tscn")
 const _GOBLIN_ARMOR_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_armor_mage.tscn")
 
-@export var wall_y: float = 2070.0
+@export var wall_y: float = 2000.0
 @export var goblin_scene: PackedScene
 @export var goblin_swift_scene: PackedScene
 @export var goblin_armor_scene: PackedScene

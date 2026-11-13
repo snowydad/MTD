@@ -24,7 +24,7 @@ const MORTAR_SCENE := preload("res://src/scenes/units/mortar.tscn")
 var units: Array[Unit] = []
 
 @export_group("Formation")
-@export var wall_y: float = 2070.0
+@export var wall_y: float = 2000.0
 @export var slot_spacing: float = 120.0
 @export var max_units: int = 9
 
@@ -117,6 +117,7 @@ func _ready() -> void:
 	btn_perk_damage.pressed.connect(_on_perk_slot.bind(2))
 
 	if wave_manager:
+		wave_manager.wall_y = wall_y
 		wave_manager.wave_started.connect(_on_wave_started)
 		wave_manager.wave_spawn_complete.connect(_on_wave_spawn_complete)
 		wave_manager.wave_cleared.connect(_on_wave_cleared)

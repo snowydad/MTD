@@ -23,7 +23,7 @@ centered = false
 
 [node name="Wall" type="Sprite2D" parent="World" unique_id=1908711004]
 z_index = 30
-position = Vector2(562, 2180)
+position = Vector2(562, 2070)
 texture = ExtResource("3_wall")
 
 [node name="Decor" type="Node2D" parent="World" unique_id=794691802]
