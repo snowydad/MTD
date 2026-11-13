@@ -10,8 +10,8 @@
 	"3": { "dhp": 12, "mhp": 36, "amp": 6, "attack_speed": 1.2, "range": 940, "splash_radius": 0 }
   },
   "cannon": {
-	"1": { "dhp": 24, "mhp": 4, "amp": 32, "attack_speed": 0.3, "range": 500, "splash_radius": 100 },
-	"2": { "dhp": 54, "mhp": 9, "amp": 72, "attack_speed": 0.4, "range": 530, "splash_radius": 150 },
-	"3": { "dhp": 108, "mhp": 18, "amp": 144, "attack_speed": 0.6, "range": 560, "splash_radius": 200 }
+	"1": { "dhp": 24, "mhp": 4, "amp": 32, "attack_speed": 0.3, "range": 500, "splash_radius": 150 },
+	"2": { "dhp": 54, "mhp": 9, "amp": 72, "attack_speed": 0.4, "range": 530, "splash_radius": 200 },
+	"3": { "dhp": 108, "mhp": 18, "amp": 144, "attack_speed": 0.6, "range": 560, "splash_radius": 250 }
   }
 }

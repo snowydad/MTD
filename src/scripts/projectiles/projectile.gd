@@ -94,7 +94,8 @@ func _compute_aim(from: Vector2, target: Enemy, flight_t: float) -> Vector2:
 		return from + Vector2(0, -400)
 
 	var p := target.global_position
-	p.y += target.move_speed * flight_t * lead_factor
+	var lead_spd: float = target.get_lead_speed() if target.has_method("get_lead_speed") else target.move_speed
+	p.y += lead_spd * flight_t * lead_factor
 
 	# Разброс: miss = max_miss / accuracy² (буст точности заметно сужает конус)
 	var miss := max_miss_px / (accuracy * accuracy)

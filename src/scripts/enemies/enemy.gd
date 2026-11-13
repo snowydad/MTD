@@ -14,6 +14,10 @@ extends Node2D
 @export var gold_reward: int = 10
 ## Дистанция до стены (px), на которой останавливается / бьёт. 0 = вплотную к wall_y.
 @export var wall_attack: float = 0.0
+## Период атаки стены (сек).
+@export var attack_speed: float = 1.0
+## Момент удара внутри цикла (сек от старта атаки) — под синхрон с анимацией.
+@export var attack_moment: float = 0.25
 
 @export_group("Zigzag")
 @export var zigzag_amplitude: float = 40.0
@@ -32,6 +36,7 @@ extends Node2D
 @export var spine_idle_animation: String = "idle"
 @export var spine_walk_animation: String = "walk"
 @export var spine_die_animation: String = "die"
+@export var spine_attack_animation: String = "attack"
 @export var spine_move_threshold: float = 5.0
 ## Если длительность die из Spine недоступна.
 @export var die_fallback_duration: float = 0.8
@@ -53,6 +58,9 @@ var _dying: bool = false
 var _freeze_left: float = 0.0
 var _slow_left: float = 0.0
 var _pre_freeze_modulate: Color = Color.WHITE
+var _attacking: bool = false
+var _attack_timer: float = 0.0
+var _attack_damage_done: bool = false
 
 var _current_speed: float = 0.0
 var _speed_tween: Tween = null
@@ -61,7 +69,16 @@ var _spine_state = null
 var _current_spine_animation: String = ""
 
 signal reached_wall(enemy: Enemy)
+## Урон по стене в момент удара (attack_moment).
+signal wall_hit(enemy: Enemy, damage: float)
 signal died(enemy: Enemy)
+
+
+## Скорость для lead прицела снарядов (0 если стоит / бьёт стену).
+func get_lead_speed() -> float:
+	if not _alive or _dying or _attacking:
+		return 0.0
+	return _current_speed
 
 @onready var sprite: Sprite2D = get_node_or_null("Sprite2D")
 @onready var spine = get_node_or_null("SpineSprite")
@@ -99,6 +116,9 @@ func setup(spawn_pos: Vector2, wall_y: float) -> void:
 	mp = max_mp
 	_alive = true
 	_dying = false
+	_attacking = false
+	_attack_timer = 0.0
+	_attack_damage_done = false
 	_freeze_left = 0.0
 	_slow_left = 0.0
 	_time = randf() * TAU
@@ -120,6 +140,10 @@ func _process(delta: float) -> void:
 	if _dying:
 		return
 	if not _alive:
+		return
+
+	if _attacking:
+		_process_wall_attack(delta)
 		return
 
 	if _freeze_left > 0.0:
@@ -158,13 +182,11 @@ func _process(delta: float) -> void:
 
 	_update_spine_animation()
 
-	if _base_y >= _stop_y:
-		_alive = false
-		reached_wall.emit(self)
-		queue_free()
+	if not _attacking and _base_y >= _stop_y:
+		_begin_wall_attack()
 
 
-## Визуальный отскок от направления прилёта. Не изменяет HP.
+## Отскок от направления удара. Если бил стену — срыв атаки и снова подход к wall_attack.
 func hit(direction: Vector2, amount: float) -> void:
 	if not _alive or _dying or amount <= 0.0:
 		return
@@ -176,33 +198,47 @@ func hit(direction: Vector2, amount: float) -> void:
 
 	if _hit_tween and _hit_tween.is_running():
 		_hit_tween.kill()
+	_hit_tween = null
 
-	var hit_position := _hit_offset + impulse
+	# Срыв атаки стены: импульс в базовую позицию, снова идём к _stop_y
+	if _attacking:
+		_attacking = false
+		_attack_timer = 0.0
+		_attack_damage_done = false
+		_base_x += impulse.x
+		_base_y += impulse.y
+		# Чуть выше линии атаки, чтобы точно перейти в walk и дойти снова
+		_base_y = minf(_base_y, _stop_y - 1.0)
+		_hit_offset = Vector2.ZERO
+		global_position = Vector2(
+			_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
+			_base_y
+		)
+	else:
+		var hit_position := _hit_offset + impulse
+		_hit_tween = create_tween()
+		_hit_tween.tween_property(
+			self,
+			"_hit_offset",
+			hit_position,
+			hit_out_duration
+		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	_hit_tween = create_tween()
-	_hit_tween.tween_property(
-		self,
-		"_hit_offset",
-		hit_position,
-		hit_out_duration
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	# Останавливаем врага и плавно восстанавливаем скорость.
 	if _speed_tween and _speed_tween.is_running():
 		_speed_tween.kill()
 
 	_current_speed = 0.0
 	_update_spine_animation()
 
-	# Не сбрасываем freeze/slow хитом
-	if _freeze_left > 0.0 or _slow_left > 0.0:
+	if _freeze_left > 0.0:
 		return
 
+	var resume := move_speed * 0.5 if _slow_left > 0.0 else move_speed
 	_speed_tween = create_tween()
 	_speed_tween.tween_property(
 		self,
 		"_current_speed",
-		move_speed,
+		resume,
 		hit_speed_recovery_duration
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
@@ -234,6 +270,56 @@ func apply_slow(duration: float) -> void:
 	_current_speed = move_speed * 0.5
 	modulate = Color(1.0, 0.75, 0.4, modulate.a)
 	_update_spine_animation()
+
+
+
+func _begin_wall_attack() -> void:
+	_attacking = true
+	_current_speed = 0.0
+	_base_y = _stop_y
+	_attack_timer = 0.0
+	_attack_damage_done = false
+	if _speed_tween and _speed_tween.is_running():
+		_speed_tween.kill()
+	_speed_tween = null
+	# Зафиксировать позицию на линии атаки
+	global_position = Vector2(
+		_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
+		_base_y
+	) + _hit_offset
+	reached_wall.emit(self)  # «дошёл» — без смерти; урон идёт через wall_hit
+	_play_spine_animation_once(spine_attack_animation)
+	_update_spine_animation()
+
+
+func _process_wall_attack(delta: float) -> void:
+	# Freeze ставит атаку на паузу
+	if _freeze_left > 0.0:
+		_freeze_left -= delta
+		if _freeze_left <= 0.0:
+			_freeze_left = 0.0
+			modulate = Color(1, 1, 1, modulate.a)
+		global_position = Vector2(
+			_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
+			_base_y
+		) + _hit_offset
+		return
+
+	_attack_timer += delta
+	var moment := clampf(attack_moment, 0.0, maxf(attack_speed, 0.01))
+	if not _attack_damage_done and _attack_timer >= moment:
+		_attack_damage_done = true
+		wall_hit.emit(self, damage_to_wall)
+
+	if _attack_timer >= maxf(attack_speed, 0.05):
+		_attack_timer = 0.0
+		_attack_damage_done = false
+		_play_spine_animation_once(spine_attack_animation)
+
+	global_position = Vector2(
+		_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
+		_base_y
+	) + _hit_offset
 
 
 ## Урон по пулам: amp→AP, mhp→MP, dhp→HP.
@@ -330,7 +416,7 @@ func _play_spine_animation_once(animation_name: String) -> void:
 
 ## Выбирает анимацию в зависимости от текущей скорости.
 func _update_spine_animation() -> void:
-	if _spine_state == null or _dying:
+	if _spine_state == null or _dying or _attacking:
 		return
 
 	if _current_speed > spine_move_threshold:

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://l5gvo6ju3fi" path="res://src/scripts/enemies/enemy.gd" id="1_enemy"]
 [ext_resource type="Texture2D" uid="uid://dgnf70foc1o0n" path="res://assets/sprites/enemies/goblin.png" id="2_tex"]
 [ext_resource type="SpineSkeletonDataResource" uid="uid://4fxil73a36s8" path="res://assets/sprites/enemies/goblin/goblin.tres" id="3_k5cuv"]
+[ext_resource type="Texture2D" uid="uid://bg1kygsorqgtq" path="res://assets/sprites/enemies/projectiles/enemy_goblin_dagger.png" id="4_w4qt1"]
 
 [sub_resource type="SpineAnimationMix" id="SpineAnimationMix_u24ta"]
 from = "idle"
@@ -56,3 +57,13 @@ preview_skin = "Default"
 preview_animation = "walk"
 preview_frame = false
 preview_time = 0.0
+
+[node name="EnemyGoblinDagger" type="Sprite2D" parent="." unique_id=1035457079]
+position = Vector2(-60, 0)
+scale = Vector2(0.55, 0.55)
+texture = ExtResource("4_w4qt1")
+
+[node name="EnemyGoblinDagger2" type="Sprite2D" parent="." unique_id=855859761]
+position = Vector2(60, 1)
+scale = Vector2(0.55, 0.55)
+texture = ExtResource("4_w4qt1")

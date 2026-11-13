@@ -55,6 +55,8 @@ static func _load_enemies() -> void:
 			"zigzag_amplitude": float(c[7]),
 			"zigzag_frequency": float(c[8]),
 			"wall_attack": float(c[9]) if c.size() >= 10 else 0.0,
+			"attack_speed": float(c[10]) if c.size() >= 11 else 1.0,
+			"attack_moment": float(c[11]) if c.size() >= 12 else 0.25,
 		}
 	f.close()
 	print("GameData: enemies ", _enemies.keys())
@@ -106,6 +108,8 @@ static func apply_to_enemy(enemy: Node, type: String) -> void:
 	enemy.set("zigzag_amplitude", float(s["zigzag_amplitude"]))
 	enemy.set("zigzag_frequency", float(s["zigzag_frequency"]))
 	enemy.set("wall_attack", float(s.get("wall_attack", 0.0)))
+	enemy.set("attack_speed", float(s.get("attack_speed", 1.0)))
+	enemy.set("attack_moment", float(s.get("attack_moment", 0.25)))
 	enemy.set("hp", float(s["max_hp"]))
 	enemy.set("ap", float(s.get("max_ap", 0.0)))
 	enemy.set("mp", float(s.get("max_mp", 0.0)))

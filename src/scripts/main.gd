@@ -194,17 +194,16 @@ func _update_hp_bar() -> void:
 
 
 func _on_enemy_reached_wall(enemy: Node2D) -> void:
-	if _game_over:
-		return
-	var e := enemy as Enemy
-	if e == null:
-		return
+	## Моб дошёл до линии атаки — урон наносится по wall_hit, не здесь.
+	pass
 
-	var dmg: float = e.damage_to_wall
+
+func _on_enemy_wall_hit(enemy: Enemy, dmg: float) -> void:
+	if _game_over or enemy == null:
+		return
 	tower_hp = maxf(tower_hp - dmg, 0.0)
 	_update_hp_bar()
 	print("Стена получила ", dmg, " урона. HP: ", tower_hp, "/", tower_max_hp)
-
 	if tower_hp <= 0.0:
 		_on_tower_destroyed()
 
@@ -226,6 +225,8 @@ func _on_enemy_spawned_for_damage(node: Node) -> void:
 		return
 	if not e.reached_wall.is_connected(_on_enemy_reached_wall):
 		e.reached_wall.connect(_on_enemy_reached_wall)
+	if e.has_signal("wall_hit") and not e.wall_hit.is_connected(_on_enemy_wall_hit):
+		e.wall_hit.connect(_on_enemy_wall_hit)
 	if not e.died.is_connected(_on_enemy_died):
 		e.died.connect(_on_enemy_died)
 

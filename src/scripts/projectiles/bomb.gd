@@ -84,7 +84,8 @@ func _aim(from: Vector2, target: Enemy, flight_t: float) -> Vector2:
 	if not is_instance_valid(target):
 		return from + Vector2(0, -350)
 	var p := target.global_position
-	p.y += target.move_speed * flight_t * lead_factor
+	var lead_spd: float = target.get_lead_speed() if target.has_method("get_lead_speed") else target.move_speed
+	p.y += lead_spd * flight_t * lead_factor
 	var miss := 50.0 / (accuracy * accuracy)
 	p.x += randf_range(-miss, miss)
 	if p.y > from.y - 16.0:
