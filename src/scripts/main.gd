@@ -26,8 +26,8 @@ var units: Array[Unit] = []
 @export_group("Formation")
 @export var wall_y: float = 2020.0
 ## Игровое поле по X для мобов (кламп зигзага / отскока / спавна).
-@export var field_x_min: float = 35.0
-@export var field_x_max: float = 1090.0
+@export var field_x_min: float = 45.0
+@export var field_x_max: float = 1080.0
 @export var slot_spacing: float = 120.0
 @export var max_units: int = 9
 
