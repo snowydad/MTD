@@ -77,7 +77,7 @@ var perk_accuracy: float = 1.0
 var perk_gold: float = 1.0
 ## fill_rate и tower_max_hp растут на месте (export-базы * накопленные множители)
 var _energy_mult: float = 1.0
-var _base_fill_rate: float = 10.0
+var _base_fill_rate: float = 1.0
 var _base_tower_max_hp: float = 100.0
 ## HP-перк: +N к max и текущему HP; в пуле только при HP < порога
 @export_group("Perks")
