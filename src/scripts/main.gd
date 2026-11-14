@@ -1,5 +1,9 @@
 extends Node2D
 
+func _progress() -> Node:
+	return get_node_or_null("/root/ProgressData")
+
+
 ## Main — юниты, формация, общий заряд, HP башни, мерж ×3.
 
 @onready var wave_label: Label = $UI/HUD/TopBar/WaveLabel
@@ -24,15 +28,15 @@ const MORTAR_SCENE := preload("res://src/scenes/units/mortar.tscn")
 var units: Array[Unit] = []
 
 @export_group("Formation")
-@export var wall_y: float = 2020.0
+@export var wall_y: float = 2070.0
 ## Игровое поле по X для мобов (кламп зигзага / отскока / спавна).
-@export var field_x_min: float = 45.0
-@export var field_x_max: float = 1080.0
+@export var field_x_min: float = 35.0
+@export var field_x_max: float = 1090.0
 @export var slot_spacing: float = 120.0
 @export var max_units: int = 9
 
 @export_group("Charge")
-@export var fill_rate: float = 1.0
+@export var fill_rate: float = 10.0
 ## Цены юнитов — assets/data/economy.tsv (unit_cost_*)
 var cost_base_archer: int = 6
 var cost_base_mage: int = 8
@@ -56,7 +60,9 @@ var gold: int = 0
 var _level_id: int = 1
 var _victory_panel: Control = null
 var _victory_label: Label = null
+var _game_over_panel: Control = null
 var _game_over: bool = false
+var _game_over_gold_saved: bool = false
 var _merges_in_flight: int = 0
 var _perk_panel_open: bool = false
 
@@ -91,7 +97,11 @@ func _ready() -> void:
 	print("Viewport size: ", get_viewport().get_visible_rect().size)
 
 	GameData.reload()
-	_level_id = 1
+	# Уровень выбран на метакарте (WaveData.set_level уже мог быть вызван)
+	var pd := _progress()
+	if WaveData.current_level() < 1 and pd != null:
+		WaveData.set_level(int(pd.selected_level))
+	_level_id = maxi(WaveData.current_level(), 1)
 	WaveData.set_level(_level_id)
 	perk_cost = GameData.perk_cost_base()
 	perk_cost_step = GameData.perk_cost_step()
@@ -109,6 +119,7 @@ func _ready() -> void:
 	_update_hp_bar()
 	_update_gold_label()
 	_ensure_victory_panel()
+	_ensure_game_over_panel()
 	perk_panel.visible = false
 
 	btn_archer.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.ARCHER))
@@ -222,6 +233,7 @@ func _on_tower_destroyed() -> void:
 	btn_mage.disabled = true
 	btn_cannon.disabled = true
 	wave_label.text = "GAME OVER"
+	_show_game_over()
 
 
 func _on_enemy_spawned_for_damage(node: Node) -> void:
@@ -430,6 +442,7 @@ func _ensure_victory_panel() -> void:
 
 func _show_victory(hp_bonus: int = 0) -> void:
 	_ensure_victory_panel()
+	_ensure_game_over_panel()
 	if _victory_label:
 		if hp_bonus > 0:
 			_victory_label.text = "Уровень %d пройден!\nHP стены +%d золота\nЗолото: %d" % [_level_id, hp_bonus, gold]
@@ -442,7 +455,81 @@ func _show_victory(hp_bonus: int = 0) -> void:
 func _on_victory_ok() -> void:
 	if _victory_panel:
 		_victory_panel.visible = false
-	_go_next_level()
+	# Мета-прогресс: открыть следующий уровень, золото боя → мета
+	var cleared := WaveData.current_level()
+	var next_lv := mini(cleared + 1, WaveData.max_level())
+	_progress().unlock_through(next_lv)
+	_progress().add_gold(gold)
+	print("Victory: unlocked through ", next_lv, " meta_gold=", _progress().gold)
+	get_tree().change_scene_to_file("res://src/scenes/ui/meta_map.tscn")
+
+
+
+func _ensure_game_over_panel() -> void:
+	if _game_over_panel != null and is_instance_valid(_game_over_panel):
+		return
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null:
+		return
+	var panel := PanelContainer.new()
+	panel.name = "GameOverPanel"
+	panel.visible = false
+	panel.z_index = 100
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -300
+	panel.offset_right = 300
+	panel.offset_top = -200
+	panel.offset_bottom = 200
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 20)
+	panel.add_child(vbox)
+	var lb := Label.new()
+	lb.name = "GameOverLabel"
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lb.add_theme_font_size_override("font_size", 42)
+	lb.text = "Game Over"
+	vbox.add_child(lb)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 24)
+	vbox.add_child(row)
+	var btn_restart := Button.new()
+	btn_restart.text = "Restart"
+	btn_restart.custom_minimum_size = Vector2(200, 72)
+	btn_restart.add_theme_font_size_override("font_size", 32)
+	btn_restart.pressed.connect(_on_game_over_restart)
+	row.add_child(btn_restart)
+	var btn_quit := Button.new()
+	btn_quit.text = "Quit"
+	btn_quit.custom_minimum_size = Vector2(200, 72)
+	btn_quit.add_theme_font_size_override("font_size", 32)
+	btn_quit.pressed.connect(_on_game_over_quit)
+	row.add_child(btn_quit)
+	hud.add_child(panel)
+	_game_over_panel = panel
+
+
+func _show_game_over() -> void:
+	_ensure_game_over_panel()
+	if not _game_over_gold_saved:
+		_game_over_gold_saved = true
+		var pd := _progress()
+		if pd:
+			pd.add_gold(gold)
+			print("GameOver: +", gold, " meta_gold=", pd.gold)
+	if _game_over_panel:
+		_game_over_panel.visible = true
+
+
+func _on_game_over_restart() -> void:
+	# Тот же уровень, золото уже ушло в мету
+	WaveData.set_level(_level_id)
+	get_tree().change_scene_to_file("res://src/scenes/main.tscn")
+
+
+func _on_game_over_quit() -> void:
+	get_tree().change_scene_to_file("res://src/scenes/ui/meta_map.tscn")
 
 
 func _go_next_level() -> void:

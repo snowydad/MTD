@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://orv476c2dn51"]
+
+[ext_resource type="Script" uid="uid://dmudodjx38id5" path="res://src/scripts/ui/options.gd" id="1"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/ui_frame.tscn" id="2"]
+
+[node name="Options" type="Control" unique_id=335110878]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Bg" type="ColorRect" parent="." unique_id=2101664046]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.12, 1)
+
+[node name="UIFrame" parent="." unique_id=170262452 instance=ExtResource("2")]
+
+[node name="Safe" type="MarginContainer" parent="." unique_id=198406906]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 140
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="VBox" type="VBoxContainer" parent="Safe" unique_id=1703709965]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BtnSfx" type="Button" parent="Safe/VBox" unique_id=1106010482]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "SFX: ON"
+
+[node name="BtnMusic" type="Button" parent="Safe/VBox" unique_id=1989913409]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "Music: ON"
+
+[node name="BtnLang" type="Button" parent="Safe/VBox" unique_id=1810392871]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "Language: EN"
+
+[node name="BtnFeedback" type="Button" parent="Safe/VBox" unique_id=612508071]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "Feedback"
+
+[node name="BtnRestore" type="Button" parent="Safe/VBox" unique_id=887910851]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "Restore Purchases"
+
+[node name="IdLabel" type="Label" parent="Safe/VBox" unique_id=1178249456]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "ID:"
+autowrap_mode = 3

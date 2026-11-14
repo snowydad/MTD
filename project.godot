@@ -16,13 +16,14 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="MTD"
 config/description="Merge Tower Defense - Prototype"
-run/main_scene="res://src/scenes/main.tscn"
+run/main_scene="uid://bw5g5slwi8ua8"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
 DevCheatManager="*res://src/scripts/dev/dev_cheat_manager.gd"
+ProgressData="*uid://lk0rrqgkbw7j"
 
 [display]
 
