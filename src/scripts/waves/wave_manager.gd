@@ -15,7 +15,8 @@ const _GOBLIN_ARMOR_DEFAULT := preload("res://src/scenes/enemies/goblin_armor.ts
 const _GOBLIN_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_mage.tscn")
 const _GOBLIN_ARMOR_MAGE_DEFAULT := preload("res://src/scenes/enemies/goblin_armor_mage.tscn")
 
-@export var wall_y: float = 2000.0 # only to init mob
+@export var field_x_min: float = 35.0
+@export var field_x_max: float = 1090.0
 @export var goblin_scene: PackedScene
 @export var goblin_swift_scene: PackedScene
 @export var goblin_armor_scene: PackedScene
@@ -126,6 +127,15 @@ func _run_entry(entry: Dictionary) -> void:
 		_on_all_entries_finished()
 
 
+func _wall_y() -> float:
+	## Единственный источник — Main.wall_y
+	var main := get_tree().get_first_node_in_group("game_main")
+	if main != null and "wall_y" in main:
+		return float(main.wall_y)
+	push_warning("WaveManager: Main.wall_y не найден")
+	return 0.0
+
+
 func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> void:
 	var scene: PackedScene = null
 	match etype:
@@ -150,10 +160,15 @@ func _spawn_enemy(etype: String, x_min: float = 35.0, x_max: float = 1100.0) -> 
 
 	var enemy: Enemy = scene.instantiate()
 	GameData.apply_to_enemy(enemy, etype)
-	var x := randf_range(x_min, x_max)
+	var lo := maxf(x_min, field_x_min)
+	var hi := minf(x_max, field_x_max)
+	if hi < lo:
+		lo = field_x_min
+		hi = field_x_max
+	var x := randf_range(lo, hi)
 	var pos := Vector2(x, spawn_y)
 	_spawn_parent.add_child(enemy)
-	enemy.setup(pos, wall_y)
+	enemy.setup(pos, _wall_y(), field_x_min, field_x_max)
 	enemy.hp = enemy.max_hp
 	enemy.reached_wall.connect(_on_enemy_resolved)
 	enemy.died.connect(_on_enemy_resolved)

@@ -12,7 +12,7 @@ extends Node2D
 @export var move_speed: float = 180.0
 @export var damage_to_wall: float = 5.0
 @export var gold_reward: int = 10
-## Дистанция до стены (px), на которой останавливается / бьёт. 0 = вплотную к wall_y.
+## Дистанция до стены (px) до линии Main.wall_y. 0 = вплотную.
 @export var wall_attack: float = 0.0
 ## Период атаки стены (сек).
 @export var attack_speed: float = 1.0
@@ -20,6 +20,8 @@ extends Node2D
 @export var attack_moment: float = 0.25
 ## Полёт кинжала до стены (сек). 0 = урон сразу без полёта (мили).
 @export var dagger_flight_time: float = 0.35
+## Полных оборотов кинжала за полёт (визуал).
+@export var dagger_spins: float = 2.0
 
 @export_group("Zigzag")
 @export var zigzag_amplitude: float = 40.0
@@ -48,8 +50,10 @@ extends Node2D
 var hp: float = 30.0
 var ap: float = 0.0
 var mp: float = 0.0
-var _wall_y: float = 2000.0
-var _stop_y: float = 2000.0
+var _wall_y: float = 0.0  # из Main через setup
+var _stop_y: float = 0.0  # wall_y - wall_attack
+var _field_x_min: float = 35.0
+var _field_x_max: float = 1090.0
 var _base_x: float = 0.0
 var _base_y: float = 0.0
 var _hit_offset: Vector2 = Vector2.ZERO
@@ -79,6 +83,14 @@ signal died(enemy: Enemy)
 
 
 ## Скорость для lead прицела снарядов (0 если стоит / бьёт стену).
+func _field_x() -> float:
+	return clampf(
+		_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
+		_field_x_min,
+		_field_x_max
+	)
+
+
 func get_lead_speed() -> float:
 	if not _alive or _dying or _attacking:
 		return 0.0
@@ -103,9 +115,11 @@ func _ready() -> void:
 		_update_spine_animation()
 
 
-func setup(spawn_pos: Vector2, wall_y: float) -> void:
+func setup(spawn_pos: Vector2, wall_y: float, x_min: float = 35.0, x_max: float = 1090.0) -> void:
 	global_position = spawn_pos
-	_base_x = spawn_pos.x
+	_field_x_min = x_min
+	_field_x_max = x_max
+	_base_x = clampf(spawn_pos.x, _field_x_min, _field_x_max)
 	_base_y = spawn_pos.y
 	_hit_offset = Vector2.ZERO
 
@@ -164,10 +178,7 @@ func _process(delta: float) -> void:
 				modulate = Color(1, 1, 1, modulate.a)
 			_update_spine_animation()
 		# Полный стоп: не двигаем Y и не крутим зигзаг по X
-		global_position = Vector2(
-			_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
-			_base_y
-		) + _hit_offset
+		global_position = Vector2(_field_x(), _base_y) + _hit_offset
 		return
 
 	if _slow_left > 0.0:
@@ -181,10 +192,7 @@ func _process(delta: float) -> void:
 	_time += delta
 	_base_y += _current_speed * delta
 
-	global_position = Vector2(
-		_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
-		_base_y
-	) + _hit_offset
+	global_position = Vector2(_field_x(), _base_y) + _hit_offset
 
 	_update_spine_animation()
 
@@ -211,15 +219,12 @@ func hit(direction: Vector2, amount: float) -> void:
 		_attacking = false
 		_attack_timer = 0.0
 		_attack_damage_done = false
-		_base_x += impulse.x
+		_base_x = clampf(_base_x + impulse.x, _field_x_min, _field_x_max)
 		_base_y += impulse.y
 		# Чуть выше линии атаки, чтобы точно перейти в walk и дойти снова
 		_base_y = minf(_base_y, _stop_y - 1.0)
 		_hit_offset = Vector2.ZERO
-		global_position = Vector2(
-			_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
-			_base_y
-		)
+		global_position = Vector2(_field_x(), _base_y)
 	else:
 		var hit_position := _hit_offset + impulse
 		_hit_tween = create_tween()
@@ -317,14 +322,17 @@ func _throw_dagger() -> void:
 	dagger.z_index = 20
 
 	var target := Vector2(dagger.global_position.x, _wall_y)
-	var dir := target - dagger.global_position
-	if dir.length_squared() > 0.01:
-		dagger.rotation = dir.angle() + PI * 0.5
-
 	var flight := maxf(dagger_flight_time, 0.05)
+	var start_rot := dagger.rotation
+	# Кручение в сторону броска (вниз к стене)
+	var spin_dir := 1.0 if tmpl.position.x >= 0.0 else -1.0
+	var end_rot := start_rot + spin_dir * TAU * dagger_spins
+
 	var tw := dagger.create_tween()
-	tw.set_parallel(false)
+	tw.set_parallel(true)
 	tw.tween_property(dagger, "global_position", target, flight).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(dagger, "rotation", end_rot, flight).set_trans(Tween.TRANS_LINEAR)
+	tw.set_parallel(false)
 	tw.tween_callback(func() -> void:
 		if is_instance_valid(self) and _alive and not _dying:
 			wall_hit.emit(self, damage_to_wall)
@@ -343,10 +351,7 @@ func _begin_wall_attack() -> void:
 		_speed_tween.kill()
 	_speed_tween = null
 	# Зафиксировать позицию на линии атаки
-	global_position = Vector2(
-		_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
-		_base_y
-	) + _hit_offset
+	global_position = Vector2(_field_x(), _base_y) + _hit_offset
 	reached_wall.emit(self)  # «дошёл» — без смерти; урон идёт через wall_hit
 	_play_spine_animation_once(spine_attack_animation)
 	_update_spine_animation()
@@ -359,10 +364,7 @@ func _process_wall_attack(delta: float) -> void:
 		if _freeze_left <= 0.0:
 			_freeze_left = 0.0
 			modulate = Color(1, 1, 1, modulate.a)
-		global_position = Vector2(
-			_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
-			_base_y
-		) + _hit_offset
+		global_position = Vector2(_field_x(), _base_y) + _hit_offset
 		return
 
 	_attack_timer += delta
@@ -376,10 +378,7 @@ func _process_wall_attack(delta: float) -> void:
 		_attack_damage_done = false
 		_play_spine_animation_once(spine_attack_animation)
 
-	global_position = Vector2(
-		_base_x + sin(_time * zigzag_frequency * TAU) * zigzag_amplitude,
-		_base_y
-	) + _hit_offset
+	global_position = Vector2(_field_x(), _base_y) + _hit_offset
 
 
 ## Урон по пулам: amp→AP, mhp→MP, dhp→HP.

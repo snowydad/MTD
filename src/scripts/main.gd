@@ -24,12 +24,15 @@ const MORTAR_SCENE := preload("res://src/scenes/units/mortar.tscn")
 var units: Array[Unit] = []
 
 @export_group("Formation")
-@export var wall_y: float = 2000.0
+@export var wall_y: float = 2020.0
+## Игровое поле по X для мобов (кламп зигзага / отскока / спавна).
+@export var field_x_min: float = 35.0
+@export var field_x_max: float = 1090.0
 @export var slot_spacing: float = 120.0
 @export var max_units: int = 9
 
 @export_group("Charge")
-@export var fill_rate: float = 10.0
+@export var fill_rate: float = 1.0
 ## Цены юнитов — assets/data/economy.tsv (unit_cost_*)
 var cost_base_archer: int = 6
 var cost_base_mage: int = 8
@@ -117,7 +120,8 @@ func _ready() -> void:
 	btn_perk_damage.pressed.connect(_on_perk_slot.bind(2))
 
 	if wave_manager:
-		wave_manager.wall_y = wall_y
+		wave_manager.field_x_min = field_x_min
+		wave_manager.field_x_max = field_x_max
 		wave_manager.wave_started.connect(_on_wave_started)
 		wave_manager.wave_spawn_complete.connect(_on_wave_spawn_complete)
 		wave_manager.wave_cleared.connect(_on_wave_cleared)
