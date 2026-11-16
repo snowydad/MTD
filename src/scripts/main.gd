@@ -28,7 +28,7 @@ const MORTAR_SCENE := preload("res://src/scenes/units/mortar.tscn")
 var units: Array[Unit] = []
 
 @export_group("Formation")
-@export var wall_y: float = 2070.0
+@export var wall_y: float = 2020.0
 ## Игровое поле по X для мобов (кламп зигзага / отскока / спавна).
 @export var field_x_min: float = 35.0
 @export var field_x_max: float = 1090.0
@@ -36,7 +36,7 @@ var units: Array[Unit] = []
 @export var max_units: int = 9
 
 @export_group("Charge")
-@export var fill_rate: float = 10.0
+@export var fill_rate: float = 1.0
 ## Цены юнитов — assets/data/economy.tsv (unit_cost_*)
 var cost_base_archer: int = 6
 var cost_base_mage: int = 8
@@ -63,8 +63,11 @@ var _victory_label: Label = null
 var _game_over_panel: Control = null
 var _game_over: bool = false
 var _game_over_gold_saved: bool = false
+var _pause_panel: Control = null
+var _paused: bool = false
 var _merges_in_flight: int = 0
 var _perk_panel_open: bool = false
+var _time_scale_before_perk: float = 1.0
 
 ## Перки: 3 из 7, шаг за золото. Шаг — economy.tsv perk_bonus.
 var perk_cost: int = 50
@@ -81,6 +84,8 @@ var _base_fill_rate: float = 1.0
 var _base_tower_max_hp: float = 100.0
 ## HP-перк: +N к max и текущему HP; в пуле только при HP < порога
 @export_group("Perks")
+## Замедление игры при открытой панели перков (1 = норма, 0.25 = x4 slow).
+@export var perk_slowdown: float = 0.25
 @export var hp_perk_amount: float = 10.0
 @export var hp_perk_hp_threshold: float = 90.0
 @export var hp_perk_chance: float = 0.5
@@ -92,6 +97,8 @@ const PERK_POOL_BASE: Array[String] = [
 
 
 func _ready() -> void:
+	# Main ALWAYS — UI/input; World PAUSABLE — стоп мобов/юнитов/снарядов
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("game_main")
 	print("MTD Prototype started")
 	print("Viewport size: ", get_viewport().get_visible_rect().size)
@@ -120,6 +127,12 @@ func _ready() -> void:
 	_update_gold_label()
 	_ensure_victory_panel()
 	_ensure_game_over_panel()
+	_ensure_pause_panel()
+	_ensure_pause_button()
+	# Явно паузабельны: иначе при ALWAYS на предке не стопорятся
+	var world := get_node_or_null("World")
+	if world:
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
 	perk_panel.visible = false
 
 	btn_archer.pressed.connect(_on_spawn_pressed.bind(Unit.UnitType.ARCHER))
@@ -144,7 +157,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if _game_over:
+	if _game_over or _paused:
 		return
 
 	# Копим до самой дорогой «следующей» цены среди трёх типов
@@ -319,6 +332,9 @@ func _try_show_perks() -> void:
 	_apply_perk_labels()
 	_perk_panel_open = true
 	perk_panel.visible = true
+	_time_scale_before_perk = Engine.time_scale
+	Engine.time_scale = maxf(perk_slowdown, 0.05)
+	print("Perk panel: time_scale ", Engine.time_scale)
 
 
 func _on_perk_slot(slot: int) -> void:
@@ -370,6 +386,7 @@ func _hide_perks() -> void:
 	_perk_panel_open = false
 	perk_panel.visible = false
 	_perk_offers.clear()
+	Engine.time_scale = _time_scale_before_perk if _time_scale_before_perk > 0.0 else 1.0
 
 
 func _refresh_all_unit_stats() -> void:
@@ -443,6 +460,12 @@ func _ensure_victory_panel() -> void:
 func _show_victory(hp_bonus: int = 0) -> void:
 	_ensure_victory_panel()
 	_ensure_game_over_panel()
+	_ensure_pause_panel()
+	_ensure_pause_button()
+	# Явно паузабельны: иначе при ALWAYS на предке не стопорятся
+	var world := get_node_or_null("World")
+	if world:
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if _victory_label:
 		if hp_bonus > 0:
 			_victory_label.text = "Уровень %d пройден!\nHP стены +%d золота\nЗолото: %d" % [_level_id, hp_bonus, gold]
@@ -512,6 +535,12 @@ func _ensure_game_over_panel() -> void:
 
 func _show_game_over() -> void:
 	_ensure_game_over_panel()
+	_ensure_pause_panel()
+	_ensure_pause_button()
+	# Явно паузабельны: иначе при ALWAYS на предке не стопорятся
+	var world := get_node_or_null("World")
+	if world:
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if not _game_over_gold_saved:
 		_game_over_gold_saved = true
 		var pd := _progress()
@@ -530,6 +559,115 @@ func _on_game_over_restart() -> void:
 
 func _on_game_over_quit() -> void:
 	get_tree().change_scene_to_file("res://src/scenes/ui/meta_map.tscn")
+
+
+
+func _ensure_pause_button() -> void:
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null:
+		return
+	if hud.get_node_or_null("BtnPause") != null:
+		return
+	var btn := Button.new()
+	btn.name = "BtnPause"
+	btn.text = "II"
+	btn.custom_minimum_size = Vector2(72, 72)
+	btn.add_theme_font_size_override("font_size", 28)
+	btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	btn.offset_left = -100
+	btn.offset_top = 24
+	btn.offset_right = -24
+	btn.offset_bottom = 96
+	btn.z_index = 50
+	btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	btn.pressed.connect(_on_pause_pressed)
+	hud.add_child(btn)
+
+
+func _ensure_pause_panel() -> void:
+	if _pause_panel != null and is_instance_valid(_pause_panel):
+		return
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null:
+		return
+	var panel := PanelContainer.new()
+	panel.name = "PausePanel"
+	panel.visible = false
+	panel.z_index = 120
+	panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -280
+	panel.offset_right = 280
+	panel.offset_top = -180
+	panel.offset_bottom = 180
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 20)
+	panel.add_child(vbox)
+	var lb := Label.new()
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lb.add_theme_font_size_override("font_size", 42)
+	lb.text = "Пауза"
+	vbox.add_child(lb)
+	var btn_cont := Button.new()
+	btn_cont.text = "Продолжить"
+	btn_cont.custom_minimum_size = Vector2(280, 72)
+	btn_cont.add_theme_font_size_override("font_size", 32)
+	btn_cont.pressed.connect(_on_pause_continue)
+	vbox.add_child(btn_cont)
+	var btn_quit := Button.new()
+	btn_quit.text = "Выйти"
+	btn_quit.custom_minimum_size = Vector2(280, 72)
+	btn_quit.add_theme_font_size_override("font_size", 32)
+	btn_quit.pressed.connect(_on_pause_quit)
+	vbox.add_child(btn_quit)
+	hud.add_child(panel)
+	_pause_panel = panel
+
+
+func _on_pause_pressed() -> void:
+	if _game_over:
+		return
+	if _paused:
+		_on_pause_continue()
+	else:
+		_set_paused(true)
+
+
+func _set_tree_pausable(node: Node) -> void:
+	node.process_mode = Node.PROCESS_MODE_PAUSABLE
+	for c in node.get_children():
+		_set_tree_pausable(c)
+
+
+func _set_paused(v: bool) -> void:
+	_paused = v
+	_ensure_pause_panel()
+	if _pause_panel:
+		_pause_panel.visible = v
+		_pause_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	# Стоп всего дерева сцен (кроме ALWAYS-нод)
+	get_tree().paused = v
+	print("Pause: ", v, " tree.paused=", get_tree().paused)
+
+
+func _on_pause_continue() -> void:
+	_set_paused(false)
+
+
+func _on_pause_quit() -> void:
+	get_tree().paused = false
+	_paused = false
+	get_tree().change_scene_to_file("res://src/scenes/ui/meta_map.tscn")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE or event.keycode == KEY_P:
+			if _game_over:
+				return
+			_on_pause_pressed()
+			get_viewport().set_input_as_handled()
 
 
 func _go_next_level() -> void:

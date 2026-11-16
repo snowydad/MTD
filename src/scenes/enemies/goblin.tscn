@@ -15,12 +15,7 @@ from = "walk"
 to = "idle"
 mix = 0.1
 
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_k5cuv"]
-load_path = "res://.godot/imported/skeleton.png-1351581c23037dd4fdda6327db615b3f.ctex"
-
 [sub_resource type="SpineAtlasResource" id="SpineAtlasResource_w4qt1"]
-source_path = "res://assets/sprites/enemies/goblin/skeleton.atlas"
-textures = [SubResource("CompressedTexture2D_k5cuv")]
 
 [sub_resource type="SpineSkeletonFileResource" id="SpineSkeletonFileResource_rkgf8"]
 
@@ -45,10 +40,6 @@ visible = false
 position = Vector2(0, 41)
 scale = Vector2(0.07, 0.07)
 skeleton_data_res = SubResource("SpineSkeletonDataResource_2cvgc")
-preview_skin = "Default"
-preview_animation = "walk"
-preview_frame = false
-preview_time = 0.0
 
 [node name="SpineSprite" type="SpineSprite" parent="." unique_id=2087501530]
 scale = Vector2(0.55, 0.55)

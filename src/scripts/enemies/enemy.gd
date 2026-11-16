@@ -387,7 +387,8 @@ func take_damage(dhp: float = 0.0, mhp: float = 0.0, amp: float = 0.0, impact_di
 	if not _alive or _dying:
 		return
 
-	var total := maxf(dhp, 0.0) + maxf(mhp, 0.0) + maxf(amp, 0.0)
+	#var total := maxf(dhp, 0.0) + maxf(mhp, 0.0) + maxf(amp, 0.0)
+	var total := maxf(maxf(dhp, 0.0), maxf(maxf(mhp, 0.0), maxf(amp, 0.0)))
 	if total > 0.0:
 		var dir := impact_direction
 		if dir.length_squared() < 0.0001:
