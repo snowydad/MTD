@@ -1,28 +1,37 @@
 class_name WaveData
 extends RefCounted
 
-## Волны уровня: assets/data/levels/level_XX.tsv
-## Колонки: wave, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
+## Все уровни в одном файле: assets/data/levels.tsv
+## Колонки: level, wave, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
 ## Имя в UI = "Wave {wave}".
 
-const LEVELS_DIR := "res://assets/data/levels/"
+const LEVELS_FILE := "res://assets/data/levels.tsv"
+
+## Сырые строки всего файла (после первого чтения).
+static var _raw_rows: Array = []
+## level_id → true
+static var _level_ids: Dictionary = {}
+static var _file_loaded: bool = false
 
 static var _waves: Array = []
-static var _loaded: bool = false
+static var _level_built: bool = false
 static var _level_id: int = 1
-static var _level_path: String = ""
 
 
-static func level_path(level_id: int = -1) -> String:
-	var id := level_id if level_id > 0 else _level_id
-	return "%slevel_%02d.tsv" % [LEVELS_DIR, id]
+static func levels_path() -> String:
+	return LEVELS_FILE
+
+
+## Совместимость со старым API (один общий файл).
+static func level_path(_level_id_arg: int = -1) -> String:
+	return LEVELS_FILE
 
 
 static func set_level(level_id: int) -> void:
 	_level_id = maxi(level_id, 1)
-	_loaded = false
+	_level_built = false
 	_waves = []
-	_ensure_loaded()
+	_ensure_level_built()
 
 
 static func current_level() -> int:
@@ -30,39 +39,47 @@ static func current_level() -> int:
 
 
 static func max_level() -> int:
-	## Сколько level_XX.tsv подряд начиная с 01.
+	_ensure_file_loaded()
 	var n := 0
-	var i := 1
-	while FileAccess.file_exists(level_path(i)):
-		n = i
-		i += 1
-		if i > 99:
-			break
+	for k in _level_ids.keys():
+		n = maxi(n, int(k))
 	return n
 
 
+static func has_level(level_id: int) -> bool:
+	_ensure_file_loaded()
+	return _level_ids.has(level_id)
+
+
 static func next_level_id() -> int:
-	var cur := _level_id
-	var nxt := cur + 1
-	if FileAccess.file_exists(level_path(nxt)):
+	_ensure_file_loaded()
+	var nxt := _level_id + 1
+	if has_level(nxt):
 		return nxt
 	return 1  # цикл с 1-го
 
 
-static func _ensure_loaded() -> void:
-	if _loaded:
-		return
-	_loaded = true
-	_waves = []
-	_level_path = level_path(_level_id)
+static func all_level_ids() -> Array:
+	_ensure_file_loaded()
+	var ids: Array = _level_ids.keys()
+	ids.sort()
+	return ids
 
-	if not FileAccess.file_exists(_level_path):
-		push_error("WaveData: нет файла " + _level_path)
+
+static func _ensure_file_loaded() -> void:
+	if _file_loaded:
+		return
+	_file_loaded = true
+	_raw_rows = []
+	_level_ids = {}
+
+	if not FileAccess.file_exists(LEVELS_FILE):
+		push_error("WaveData: нет файла " + LEVELS_FILE)
 		return
 
-	var f := FileAccess.open(_level_path, FileAccess.READ)
+	var f := FileAccess.open(LEVELS_FILE, FileAccess.READ)
 	if f == null:
-		push_error("WaveData: не открыть " + _level_path)
+		push_error("WaveData: не открыть " + LEVELS_FILE)
 		return
 
 	var header_line := f.get_line().strip_edges()
@@ -71,28 +88,66 @@ static func _ensure_loaded() -> void:
 		push_error("WaveData: пустой TSV")
 		return
 
-	var by_wave: Dictionary = {}
+	## Ожидаем: level, wave, subwave, type, delay, count, interval, spawn_x_min, spawn_x_max
+	## (старый формат без level больше не поддерживается)
 
 	while not f.eof_reached():
 		var line := f.get_line().strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
 		var cols := _parse_tsv_line(line)
-		if cols.size() < 6:
+		if cols.size() < 7:
 			push_warning("WaveData: пропуск строки (мало колонок): " + line)
 			continue
 
-		var wid := int(cols[0])
-		var sid := String(cols[1])
-		var etype := String(cols[2]).to_lower()
-		var delay := float(cols[3])
-		var count := int(cols[4])
-		var interval := float(cols[5])
+		var lid := int(cols[0])
+		var wid := int(cols[1])
+		var sid := String(cols[2])
+		var etype := String(cols[3]).to_lower()
+		var delay := float(cols[4])
+		var count := int(cols[5])
+		var interval := float(cols[6])
 		var x_min := 35.0
 		var x_max := 1100.0
-		if cols.size() >= 8:
-			x_min = float(cols[6])
-			x_max = float(cols[7])
+		if cols.size() >= 9:
+			x_min = float(cols[7])
+			x_max = float(cols[8])
+
+		if lid < 1 or wid < 1:
+			push_warning("WaveData: пропуск строки (level/wave < 1): " + line)
+			continue
+
+		_level_ids[lid] = true
+		_raw_rows.append({
+			"level": lid,
+			"wave": wid,
+			"subwave": sid,
+			"type": etype,
+			"delay": delay,
+			"count": count,
+			"interval": interval,
+			"spawn_x_min": x_min,
+			"spawn_x_max": x_max,
+		})
+
+	f.close()
+	print("WaveData: файл загружен, уровней: ", _level_ids.size(), ", строк: ", _raw_rows.size())
+
+
+static func _ensure_level_built() -> void:
+	if _level_built:
+		return
+	_ensure_file_loaded()
+	_level_built = true
+	_waves = []
+
+	var by_wave: Dictionary = {}
+
+	for row in _raw_rows:
+		if int(row["level"]) != _level_id:
+			continue
+		var wid: int = int(row["wave"])
+		var sid: String = str(row["subwave"])
 
 		if not by_wave.has(wid):
 			by_wave[wid] = {
@@ -105,15 +160,13 @@ static func _ensure_loaded() -> void:
 		if not subs.has(sid):
 			subs[sid] = []
 		subs[sid].append({
-			"type": etype,
-			"delay": delay,
-			"count": count,
-			"interval": interval,
-			"spawn_x_min": x_min,
-			"spawn_x_max": x_max,
+			"type": str(row["type"]),
+			"delay": float(row["delay"]),
+			"count": int(row["count"]),
+			"interval": float(row["interval"]),
+			"spawn_x_min": float(row["spawn_x_min"]),
+			"spawn_x_max": float(row["spawn_x_max"]),
 		})
-
-	f.close()
 
 	var ids: Array = by_wave.keys()
 	ids.sort()
@@ -145,17 +198,21 @@ static func _parse_tsv_line(line: String) -> PackedStringArray:
 
 
 static func reload() -> void:
-	_loaded = false
-	_ensure_loaded()
+	_file_loaded = false
+	_level_built = false
+	_raw_rows = []
+	_level_ids = {}
+	_waves = []
+	_ensure_level_built()
 
 
 static func wave_count() -> int:
-	_ensure_loaded()
+	_ensure_level_built()
 	return _waves.size()
 
 
 static func get_wave(index: int) -> Dictionary:
-	_ensure_loaded()
+	_ensure_level_built()
 	if index < 0 or index >= _waves.size():
 		return {}
 	return _waves[index]
