@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MTD Level Editor</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3b82f6;
+      --accent2: #22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --row-hover: #243044;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    header .badge {
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: #0f1419;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-left: auto;
+      align-items: center;
+    }
+    button, .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    button:hover, .btn:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.secondary, .btn.secondary { background: #334155; }
+    button.success, .btn.success { background: var(--accent2); color: #052e16; }
+    button.danger, .btn.danger { background: var(--danger); }
+    select, input[type="text"], input[type="number"], textarea {
+      background: #0f1419;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.875rem;
+    }
+    input[type="number"] { width: 88px; }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      height: calc(100vh - 58px);
+      overflow: hidden;
+    }
+    @media (max-width: 980px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+      }
+    }
+    .table-wrap {
+      overflow: auto;
+      padding: 12px 16px 40px;
+      height: 100%;
+    }
+    .level-block {
+      background: #141923;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .level-header {
+      background: #1b2636;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .level-header button.move-lvl {
+      padding: 5px 9px;
+      font-size: 0.8rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 920px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 6px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background: #15202b;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      z-index: 5;
+    }
+    tr:hover td { background: var(--row-hover); }
+    td.actions { white-space: nowrap; }
+    td.actions button {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      margin-right: 2px;
+      background: #334155;
+    }
+    td.actions button.danger { background: var(--danger); }
+    select.type-select { min-width: 150px; }
+    aside {
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      padding: 14px 16px 24px;
+      overflow-y: auto;
+      height: 100%;
+    }
+    aside h2 { margin: 0 0 10px; font-size: 0.95rem; }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+    .stat span:last-child { font-weight: 600; }
+    .wave-card {
+      background: #0f1419;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      font-size: 0.8rem;
+    }
+    .wave-card h3 { margin: 0 0 6px; font-size: 0.85rem; color: #93c5fd; }
+    .chip {
+      display: inline-block;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin: 2px 2px 0 0;
+      font-size: 0.72rem;
+    }
+    .hint { color: var(--muted); font-size: 0.75rem; margin-top: 8px; }
+    .toast {
+      position: fixed;
+      bottom: 16px; right: 16px;
+      background: #166534; color: #dcfce7;
+      padding: 10px 14px; border-radius: 10px;
+      font-size: 0.875rem; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s; z-index: 50;
+    }
+    .toast.show { opacity: 1; }
+    .toast.err { background: #7f1d1d; color: #fecaca; }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MTD Level Editor</h1>
+    <span class="badge" id="fileBadge">level_01.tsv</span>
+    <div class="toolbar">
+      <label for="fileInputFallback" class="btn secondary" id="btnOpen">Open</label>
+      <button type="button" class="success" id="btnSave">Save</button>
+      <button type="button" class="secondary" id="btnSaveAs">Save As</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px;"></span>
+      <button type="button" class="secondary" id="btnUndo" title="Ctrl+Z">↶ Undo</button>
+      <button type="button" class="secondary" id="btnRedo" title="Ctrl+Y">↷ Redo</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px;"></span>
+      <button type="button" class="secondary" id="btnAddLvl">Add lvl after current</button>
+      <button type="button" class="secondary" id="btnLoadSample">Sample Presets</button>
+      <button type="button" class="secondary" id="btnCopy">Копировать TSV</button>
+      <input type="file" id="fileInputFallback" class="visually-hidden" />
+    </div>
+  </header>
+
+  <main>
+    <div class="table-wrap" id="levelsContainer"></div>
+
+    <aside>
+      <h2>Сводка</h2>
+      <div id="summary"></div>
+
+      <h2 style="margin-top:18px">Типы врагов</h2>
+      <div id="enemyList" class="hint"></div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const ENEMIES = {
+      goblin:            { gold: 10 },
+      goblin_armor:      { gold: 12 },
+      goblin_mage:       { gold: 12 },
+      goblin_armor_mage: { gold: 15 },
+      goblin_swift:      { gold: 10 },
+      orc:               { gold: 15 },
+    };
+    const ENEMY_TYPES = Object.keys(ENEMIES);
+
+    let levels = [
+      {
+        levelId: 1,
+        rows: [
+          { wave: 1, subwave: "1.1", type: "goblin", delay: 2, count: 3, interval: 6, spawn_x_min: 460, spawn_x_max: 660 },
+          { wave: 1, subwave: "1.2", type: "orc", delay: 18, count: 2, interval: 11, spawn_x_min: 360, spawn_x_max: 960 },
+          { wave: 2, subwave: "2.1", type: "goblin", delay: 0, count: 6, interval: 3, spawn_x_min: 360, spawn_x_max: 960 },
+          { wave: 2, subwave: "2.2", type: "orc", delay: 2, count: 2, interval: 6, spawn_x_min: 55, spawn_x_max: 1050 }
+        ]
+      }
+    ];
+
+    let activeLevelIndex = 0;
+    let fileHandle = null;
+    let fileName = "";
+    let dirty = false;
+
+    const hasOpenPicker = typeof window.showOpenFilePicker === "function";
+    const hasSavePicker = typeof window.showSaveFilePicker === "function";
+
+    function reindexLevels() {
+      levels.forEach((lvl, idx) => {
+        lvl.levelId = idx + 1;
+      });
+    }
+
+    // --- History (Undo / Redo) ---
+    let history = [];
+    let historyIndex = -1;
+
+    function pushHistory() {
+      const snap = JSON.stringify(levels);
+      if (historyIndex >= 0 && history[historyIndex] === snap) return;
+      history = history.slice(0, historyIndex + 1);
+      history.push(snap);
+      if (history.length > 50) history.shift();
+      else historyIndex++;
+      updateUndoButtons();
+    }
+
+    function undo() {
+      if (historyIndex <= 0) return;
+      historyIndex--;
+      levels = JSON.parse(history[historyIndex]);
+      if (activeLevelIndex >= levels.length) activeLevelIndex = Math.max(0, levels.length - 1);
+      dirty = true;
+      render(false);
+      updateUndoButtons();
+      toast("Undo");
+    }
+
+    function redo() {
+      if (historyIndex >= history.length - 1) return;
+      historyIndex++;
+      levels = JSON.parse(history[historyIndex]);
+      if (activeLevelIndex >= levels.length) activeLevelIndex = Math.max(0, levels.length - 1);
+      dirty = true;
+      render(false);
+      updateUndoButtons();
+      toast("Redo");
+    }
+
+    function updateUndoButtons() {
+      document.getElementById("btnUndo").disabled = historyIndex <= 0;
+      document.getElementById("btnRedo").disabled = historyIndex >= history.length - 1;
+    }
+
+    function toast(msg, err = false) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.className = "toast show" + (err ? " err" : "");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    function updateBadge() {
+      const el = document.getElementById("fileBadge");
+      const first = String(levels[0]?.levelId || 1).padStart(2, "0");
+      const last = String(levels[levels.length - 1]?.levelId || 1).padStart(2, "0");
+      const range = levels.length > 1 ? `level_${first}...level_${last}` : `level_${first}`;
+      const label = fileName ? `${fileName} [${range}]` : `${range}.tsv`;
+      el.textContent = (dirty ? "● " : "") + label;
+      el.style.color = dirty ? "var(--warn)" : "var(--muted)";
+    }
+
+    // --- TSV Serialization / Parsing ---
+    function toTsv() {
+      const header = "level\twave\tsubwave\ttype\tdelay\tcount\tinterval\tspawn_x_min\tspawn_x_max";
+      const lines = [header];
+      levels.forEach((lvl, idx) => {
+        const lvlNum = idx + 1;
+        lvl.rows.forEach(r => {
+          lines.push([
+            lvlNum,
+            r.wave,
+            r.subwave,
+            r.type,
+            r.delay,
+            r.count,
+            r.interval,
+            r.spawn_x_min,
+            r.spawn_x_max
+          ].join("\t"));
+        });
+      });
+      return lines.join("\n") + "\n";
+    }
+
+    function splitLine(line, sep) {
+      return line.split(sep).map(s => s.trim());
+    }
+
+    function detectSeparator(sampleLine) {
+      if (sampleLine.includes("\t")) return "\t";
+      if (sampleLine.includes(";")) return ";";
+      if (sampleLine.includes(",")) return ",";
+      return /\s+/;
+    }
+
+    function parseTsv(rawText) {
+      const cleanText = String(rawText || "").replace(/^\uFEFF/, "");
+      const rawLines = cleanText
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l !== "" && !l.startsWith("#"));
+
+      if (!rawLines.length) return [];
+
+      const sep = detectSeparator(rawLines[0]);
+      const firstCols = splitLine(rawLines[0], sep).map(s => s.toLowerCase());
+      const headerKeywords = ["wave", "type", "enemy", "count", "delay", "interval", "level"];
+      const hasHeader = firstCols.some(col => headerKeywords.includes(col));
+
+      const colMap = {};
+      if (hasHeader) {
+        firstCols.forEach((name, idx) => {
+          colMap[name] = idx;
+        });
+      }
+
+      const levelMap = new Map();
+      const levelOrder = [];
+
+      for (let i = hasHeader ? 1 : 0; i < rawLines.length; i++) {
+        const cols = splitLine(rawLines[i], sep);
+        if (cols.length < 3) continue;
+
+        let lvlId = 1;
+        let wave = 1;
+        let subwave = "";
+        let type = "goblin";
+        let delay = 0;
+        let count = 1;
+        let interval = 1;
+        let spawnMin = 55;
+        let spawnMax = 1070;
+
+        if (hasHeader) {
+          const getVal = (keys, fallback) => {
+            for (const k of keys) {
+              if (colMap[k] !== undefined && cols[colMap[k]] !== undefined && cols[colMap[k]] !== "") {
+                return cols[colMap[k]];
+              }
+            }
+            return fallback;
+          };
+
+          lvlId = parseInt(getVal(["level", "lvl"], "1"), 10) || 1;
+          wave = parseInt(getVal(["wave"], "1"), 10) || 1;
+          subwave = getVal(["subwave", "sub"], `${wave}.1`);
+          type = getVal(["type", "enemy", "mob"], "goblin");
+          delay = parseFloat(getVal(["delay", "start_delay"], "0").replace(",", ".")) || 0;
+          count = parseInt(getVal(["count", "amount"], "1"), 10) || 1;
+          interval = parseFloat(getVal(["interval", "cooldown"], "1").replace(",", ".")) || 1;
+          spawnMin = parseFloat(getVal(["spawn_x_min", "x_min", "min_x"], "55").replace(",", ".")) || 55;
+          spawnMax = parseFloat(getVal(["spawn_x_max", "x_max", "max_x"], "1070").replace(",", ".")) || 1070;
+        } else {
+          if (cols.length >= 9) {
+            lvlId = parseInt(cols[0], 10) || 1;
+            wave = parseInt(cols[1], 10) || 1;
+            subwave = cols[2] || `${wave}.1`;
+            type = cols[3] || "goblin";
+            delay = parseFloat(cols[4].replace(",", ".")) || 0;
+            count = parseInt(cols[5], 10) || 1;
+            interval = parseFloat(cols[6].replace(",", ".")) || 1;
+            spawnMin = parseFloat(cols[7].replace(",", ".")) || 55;
+            spawnMax = parseFloat(cols[8].replace(",", ".")) || 1070;
+          } else if (cols.length === 8) {
+            wave = parseInt(cols[0], 10) || 1;
+            subwave = cols[1] || `${wave}.1`;
+            type = cols[2] || "goblin";
+            delay = parseFloat(cols[3].replace(",", ".")) || 0;
+            count = parseInt(cols[4], 10) || 1;
+            interval = parseFloat(cols[5].replace(",", ".")) || 1;
+            spawnMin = parseFloat(cols[6].replace(",", ".")) || 55;
+            spawnMax = parseFloat(cols[7].replace(",", ".")) || 1070;
+          } else if (cols.length >= 6) {
+            wave = parseInt(cols[0], 10) || 1;
+            subwave = `${wave}.1`;
+            type = cols[1] || "goblin";
+            delay = parseFloat(cols[2].replace(",", ".")) || 0;
+            count = parseInt(cols[3], 10) || 1;
+            interval = parseFloat(cols[4].replace(",", ".")) || 1;
+            spawnMin = parseFloat(cols[5].replace(",", ".")) || 55;
+            spawnMax = cols[6] ? (parseFloat(cols[6].replace(",", ".")) || 1070) : 1070;
+          } else {
+            continue;
+          }
+        }
+
+        if (!levelMap.has(lvlId)) {
+          levelMap.set(lvlId, []);
+          levelOrder.push(lvlId);
+        }
+        levelMap.get(lvlId).push({
+          wave,
+          subwave,
+          type,
+          delay,
+          count,
+          interval,
+          spawn_x_min: spawnMin,
+          spawn_x_max: spawnMax
+        });
+      }
+
+      return levelOrder.map((id, idx) => ({ levelId: idx + 1, rows: levelMap.get(id) }));
+    }
+
+    function applyLoadedData(text, name, handle = null) {
+      const parsed = parseTsv(text);
+      if (!parsed.length) {
+        toast(`Не удалось прочитать строки из "${name}"`, true);
+        return;
+      }
+      levels = parsed;
+      fileHandle = handle;
+      fileName = name;
+      activeLevelIndex = 0;
+      dirty = false;
+      history = [];
+      historyIndex = -1;
+      render(true);
+      const totalRows = parsed.reduce((acc, l) => acc + l.rows.length, 0);
+      toast(`Открыт ${name}: уровней ${parsed.length}, строк ${totalRows}`);
+    }
+
+    // --- File Operations (Open / Save / Save As) ---
+    document.getElementById("btnOpen").addEventListener("click", async (e) => {
+      if (hasOpenPicker) {
+        e.preventDefault();
+        try {
+          const [handle] = await window.showOpenFilePicker({ multiple: false });
+          const file = await handle.getFile();
+          const text = await file.text();
+          applyLoadedData(text, handle.name, handle);
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+          document.getElementById("fileInputFallback").click();
+        }
+      }
+    });
+
+    document.getElementById("fileInputFallback").addEventListener("change", (e) => {
+      const f = e.target.files?.[0];
+      e.target.value = "";
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        applyLoadedData(String(reader.result || ""), f.name, null);
+      };
+      reader.onerror = () => {
+        toast("Ошибка чтения файла с диска", true);
+      };
+      reader.readAsText(f);
+    });
+
+    function downloadTsvFallback(targetName) {
+      const tsv = toTsv();
+      const blob = new Blob([tsv], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = targetName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      fileName = targetName;
+      dirty = false;
+      updateBadge();
+      toast("Скачан: " + targetName);
+    }
+
+    async function saveFile() {
+      if (fileHandle) {
+        try {
+          if (typeof fileHandle.requestPermission === "function") {
+            const perm = await fileHandle.requestPermission({ mode: "readwrite" });
+            if (perm !== "granted") {
+              toast("Нет прав на запись в файл", true);
+              return;
+            }
+          }
+          const writable = await fileHandle.createWritable();
+          await writable.write(toTsv());
+          await writable.close();
+          dirty = false;
+          updateBadge();
+          toast("Сохранено: " + fileName);
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+          toast("Ошибка записи: " + err.message, true);
+          return;
+        }
+      }
+      await saveFileAs();
+    }
+
+    async function saveFileAs() {
+      const tsv = toTsv();
+      const defaultName = fileName || `level_${String(levels[0]?.levelId || 1).padStart(2, "0")}.tsv`;
+      if (hasSavePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({ suggestedName: defaultName });
+          const writable = await handle.createWritable();
+          await writable.write(tsv);
+          await writable.close();
+          fileHandle = handle;
+          fileName = handle.name;
+          dirty = false;
+          updateBadge();
+          toast("Сохранено: " + fileName);
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+        }
+      }
+      downloadTsvFallback(defaultName);
+    }
+
+    // --- Render & Editing ---
+    function render(recordHistory = true) {
+      reindexLevels();
+      if (recordHistory) pushHistory();
+      updateBadge();
+
+      const container = document.getElementById("levelsContainer");
+      container.innerHTML = "";
+
+      levels.forEach((lvl, lvlIdx) => {
+        const block = document.createElement("div");
+        block.className = "level-block";
+        if (lvlIdx === activeLevelIndex) block.style.borderColor = "var(--accent)";
+
+        let rowsHtml = "";
+        lvl.rows.forEach((r, rIdx) => {
+          const knownType = ENEMY_TYPES.includes(r.type);
+          const customOpt = knownType ? "" : `<option value="${r.type}" selected>${r.type}</option>`;
+          const typeOpts = customOpt + ENEMY_TYPES.map(t => `<option value="${t}" ${t === r.type ? "selected" : ""}>${t}</option>`).join("");
+
+          rowsHtml += `
+            <tr>
+              <td>${rIdx + 1}</td>
+              <td><input type="number" min="1" value="${r.wave}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'wave', this.value)" style="width:55px" /></td>
+              <td><input type="text" value="${r.subwave}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'subwave', this.value)" style="width:65px" /></td>
+              <td><select class="type-select" onchange="updateCell(${lvlIdx}, ${rIdx}, 'type', this.value)">${typeOpts}</select></td>
+              <td><input type="number" step="0.1" min="0" value="${r.delay}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'delay', this.value)" /></td>
+              <td><input type="number" min="1" value="${r.count}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'count', this.value)" style="width:60px" /></td>
+              <td><input type="number" step="0.1" min="0" value="${r.interval}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'interval', this.value)" /></td>
+              <td><input type="number" step="1" value="${r.spawn_x_min}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'spawn_x_min', this.value)" /></td>
+              <td><input type="number" step="1" value="${r.spawn_x_max}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'spawn_x_max', this.value)" /></td>
+              <td class="actions">
+                <button type="button" onclick="moveRow(${lvlIdx}, ${rIdx}, -1)" title="Вверх">▲</button>
+                <button type="button" onclick="moveRow(${lvlIdx}, ${rIdx}, 1)" title="Вниз">▼</button>
+                <button type="button" onclick="dupRow(${lvlIdx}, ${rIdx})" title="Дублировать">⧉</button>
+                <button type="button" class="danger" onclick="delRow(${lvlIdx}, ${rIdx})" title="Удалить">✕</button>
+              </td>
+            </tr>
+          `;
+        });
+
+        block.innerHTML = `
+          <div class="level-header" onclick="activeLevelIndex = ${lvlIdx}; render(false);">
+            <span>${String(lvl.levelId).padStart(2, "0")}</span>
+            <span>Уровень ${lvl.levelId} (Строк: ${lvl.rows.length})</span>
+            <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+              <button type="button" class="secondary move-lvl" onclick="event.stopPropagation(); moveLevel(${lvlIdx}, -1)" ${lvlIdx === 0 ? "disabled" : ""} title="Переместить уровень вверх">▲</button>
+              <button type="button" class="secondary move-lvl" onclick="event.stopPropagation(); moveLevel(${lvlIdx}, 1)" ${lvlIdx === levels.length - 1 ? "disabled" : ""} title="Переместить уровень вниз">▼</button>
+              <button type="button" class="success" onclick="event.stopPropagation(); addWave(${lvlIdx})">+ Add wave</button>
+              <button type="button" class="danger" onclick="event.stopPropagation(); deleteLevel(${lvlIdx})">Удалить уровень</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>wave</th>
+                <th>subwave</th>
+                <th>type</th>
+                <th>delay</th>
+                <th>count</th>
+                <th>interval</th>
+                <th>spawn_x_min</th>
+                <th>spawn_x_max</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        `;
+        container.appendChild(block);
+      });
+
+      renderSummary();
+    }
+
+    function moveLevel(lvlIdx, dir) {
+      const target = lvlIdx + dir;
+      if (target < 0 || target >= levels.length) return;
+      const temp = levels[lvlIdx];
+      levels[lvlIdx] = levels[target];
+      levels[target] = temp;
+
+      if (activeLevelIndex === lvlIdx) activeLevelIndex = target;
+      else if (activeLevelIndex === target) activeLevelIndex = lvlIdx;
+
+      dirty = true;
+      render(true);
+    }
+
+    function updateCell(lvlIdx, rIdx, field, val) {
+      let v = val;
+      if (["wave", "count"].includes(field)) v = parseInt(val, 10) || 1;
+      else if (["delay", "interval", "spawn_x_min", "spawn_x_max"].includes(field)) v = parseFloat(val) || 0;
+
+      const rows = levels[lvlIdx].rows;
+      rows[rIdx][field] = v;
+
+      if (field === "wave") {
+        const sameWaveBefore = rows.slice(0, rIdx).filter(r => r.wave === v).length;
+        rows[rIdx].subwave = `${v}.${sameWaveBefore + 1}`;
+      }
+
+      dirty = true;
+      render(true);
+    }
+
+    function addWave(lvlIdx) {
+      const rows = levels[lvlIdx].rows;
+      const last = rows[rows.length - 1] || { wave: 1 };
+      rows.push({
+        wave: last.wave,
+        subwave: `${last.wave}.${rows.filter(r => r.wave === last.wave).length + 1}`,
+        type: "goblin",
+        delay: 0,
+        count: 3,
+        interval: 3,
+        spawn_x_min: 55,
+        spawn_x_max: 1070
+      });
+      activeLevelIndex = lvlIdx;
+      dirty = true;
+      render(true);
+      toast("Добавлена сабволна");
+    }
+
+    function moveRow(lvlIdx, rIdx, dir) {
+      const rows = levels[lvlIdx].rows;
+      const target = rIdx + dir;
+      if (target < 0 || target >= rows.length) return;
+      const temp = rows[rIdx];
+      rows[rIdx] = rows[target];
+      rows[target] = temp;
+      dirty = true;
+      render(true);
+    }
+
+    function dupRow(lvlIdx, rIdx) {
+      const rows = levels[lvlIdx].rows;
+      const copy = { ...rows[rIdx] };
+      rows.splice(rIdx + 1, 0, copy);
+      dirty = true;
+      render(true);
+    }
+
+    function delRow(lvlIdx, rIdx) {
+      levels[lvlIdx].rows.splice(rIdx, 1);
+      dirty = true;
+      render(true);
+    }
+
+    function deleteLevel(lvlIdx) {
+      if (levels.length <= 1) {
+        toast("Нельзя удалить единственный уровень", true);
+        return;
+      }
+      levels.splice(lvlIdx, 1);
+      activeLevelIndex = Math.max(0, lvlIdx - 1);
+      dirty = true;
+      render(true);
+      toast("Уровень удален");
+    }
+
+    function renderSummary() {
+      const activeLvl = levels[activeLevelIndex] || levels[0];
+      const box = document.getElementById("summary");
+      if (!activeLvl || !activeLvl.rows.length) {
+        box.innerHTML = `<div class="hint">Нет данных</div>`;
+        return;
+      }
+      const byWave = {};
+      let totalEnemies = 0;
+      let totalGold = 0;
+      for (const r of activeLvl.rows) {
+        if (!byWave[r.wave]) byWave[r.wave] = { enemies: 0, gold: 0, entries: [], types: {} };
+        const g = (ENEMIES[r.type]?.gold ?? 0) * r.count;
+        byWave[r.wave].enemies += r.count;
+        byWave[r.wave].gold += g;
+        byWave[r.wave].entries.push(r);
+        byWave[r.wave].types[r.type] = (byWave[r.wave].types[r.type] || 0) + r.count;
+        totalEnemies += r.count;
+        totalGold += g;
+      }
+      const waveIds = Object.keys(byWave).map(Number).sort((a, b) => a - b);
+      let html = `
+        <div class="stat"><span>Уровень активен</span><span>${String(activeLvl.levelId).padStart(2, "0")}</span></div>
+        <div class="stat"><span>Волн</span><span>${waveIds.length}</span></div>
+        <div class="stat"><span>Строк (entries)</span><span>${activeLvl.rows.length}</span></div>
+        <div class="stat"><span>Всего врагов</span><span>${totalEnemies}</span></div>
+        <div class="stat"><span>Золото с киллов*</span><span>${totalGold}</span></div>
+        <p class="hint">* по gold_reward из enemies.tsv</p>
+      `;
+      for (const wid of waveIds) {
+        const w = byWave[wid];
+        const chips = Object.entries(w.types).map(([t, n]) => `<span class="chip">${t} ×${n}</span>`).join("");
+        const maxDelay = Math.max(...w.entries.map(e => e.delay + Math.max(0, e.count - 1) * e.interval), 0);
+        html += `
+          <div class="wave-card">
+            <h3>Wave ${wid}</h3>
+            <div>${w.enemies} врагов · ~${w.gold} gold · ~${maxDelay.toFixed(1)}s spawn window</div>
+            <div style="margin-top:6px">${chips}</div>
+          </div>
+        `;
+      }
+      box.innerHTML = html;
+    }
+
+    function renderEnemyList() {
+      document.getElementById("enemyList").innerHTML = ENEMY_TYPES
+        .map(t => `<div><code>${t}</code> — gold ${ENEMIES[t].gold}</div>`)
+        .join("");
+    }
+
+    // --- Toolbar Bindings ---
+    document.getElementById("btnSave").onclick = saveFile;
+    document.getElementById("btnSaveAs").onclick = saveFileAs;
+    document.getElementById("btnUndo").onclick = undo;
+    document.getElementById("btnRedo").onclick = redo;
+
+    document.getElementById("btnAddLvl").onclick = () => {
+      levels.splice(activeLevelIndex + 1, 0, {
+        levelId: activeLevelIndex + 2,
+        rows: [{ wave: 1, subwave: "1.1", type: "goblin", delay: 0, count: 5, interval: 3, spawn_x_min: 55, spawn_x_max: 1070 }]
+      });
+      activeLevelIndex++;
+      dirty = true;
+      render(true);
+      toast(`Добавлен уровень ${String(activeLevelIndex + 1).padStart(2, "0")}`);
+    };
+
+    document.getElementById("btnLoadSample").onclick = () => {
+      levels = [
+        {
+          levelId: 1,
+          rows: [
+            { wave: 1, subwave: "1.1", type: "goblin", delay: 2, count: 3, interval: 6, spawn_x_min: 460, spawn_x_max: 660 },
+            { wave: 1, subwave: "1.2", type: "orc", delay: 18, count: 2, interval: 11, spawn_x_min: 360, spawn_x_max: 960 }
+          ]
+        },
+        {
+          levelId: 2,
+          rows: [
+            { wave: 1, subwave: "1.1", type: "goblin", delay: 0, count: 5, interval: 3.5, spawn_x_min: 400, spawn_x_max: 720 },
+            { wave: 2, subwave: "2.1", type: "goblin_armor", delay: 2, count: 4, interval: 4, spawn_x_min: 200, spawn_x_max: 900 }
+          ]
+        }
+      ];
+      activeLevelIndex = 0;
+      fileHandle = null;
+      fileName = "";
+      dirty = true;
+      render(true);
+      toast("Загружены сэмплы уровней");
+    };
+
+    document.getElementById("btnCopy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(toTsv());
+        toast("TSV скопирован в буфер");
+      } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = toTsv();
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        toast("TSV скопирован в буфер");
+      }
+    };
+
+    document.addEventListener("keydown", (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "s") {
+        e.preventDefault();
+        e.shiftKey ? saveFileAs() : saveFile();
+      } else if (k === "o") {
+        e.preventDefault();
+        document.getElementById("btnOpen").click();
+      } else if (k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (k === "y" || (k === "z" && e.shiftKey)) {
+        e.preventDefault();
+        redo();
+      }
+    });
+
+    renderEnemyList();
+    render(true);
+  </script>
+</body>
+</html>

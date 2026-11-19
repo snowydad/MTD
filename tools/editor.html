@@ -86,14 +86,20 @@
     main {
       display: grid;
       grid-template-columns: 1fr 320px;
-      min-height: calc(100vh - 58px);
+      height: calc(100vh - 58px);
+      overflow: hidden;
     }
     @media (max-width: 980px) {
-      main { grid-template-columns: 1fr; }
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+      }
     }
     .table-wrap {
       overflow: auto;
       padding: 12px 16px 40px;
+      height: 100%;
     }
     .level-block {
       background: #141923;
@@ -111,6 +117,10 @@
       font-weight: 700;
       border-bottom: 1px solid var(--border);
       cursor: pointer;
+    }
+    .level-header button.move-lvl {
+      padding: 5px 9px;
+      font-size: 0.8rem;
     }
     table {
       width: 100%;
@@ -146,7 +156,8 @@
       background: var(--panel);
       border-left: 1px solid var(--border);
       padding: 14px 16px 24px;
-      overflow: auto;
+      overflow-y: auto;
+      height: 100%;
     }
     aside h2 { margin: 0 0 10px; font-size: 0.95rem; }
     .stat {
@@ -193,16 +204,16 @@
     <h1>MTD Level Editor</h1>
     <span class="badge" id="fileBadge">level_01.tsv</span>
     <div class="toolbar">
-      <button class="secondary" id="btnOpen">Open</button>
-      <button class="success" id="btnSave">Save</button>
-      <button class="secondary" id="btnSaveAs">Save As</button>
+      <button type="button" class="secondary" id="btnOpen">Open</button>
+      <button type="button" class="success" id="btnSave">Save</button>
+      <button type="button" class="secondary" id="btnSaveAs">Save As</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px;"></span>
-      <button class="secondary" id="btnUndo" title="Ctrl+Z">↶ Undo</button>
-      <button class="secondary" id="btnRedo" title="Ctrl+Y">↷ Redo</button>
+      <button type="button" class="secondary" id="btnUndo" title="Ctrl+Z">↶ Undo</button>
+      <button type="button" class="secondary" id="btnRedo" title="Ctrl+Y">↷ Redo</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px;"></span>
-      <button class="secondary" id="btnAddLvl">Add lvl after current</button>
-      <button class="secondary" id="btnLoadSample">Sample Presets</button>
-      <button class="secondary" id="btnCopy">Копировать TSV</button>
+      <button type="button" class="secondary" id="btnAddLvl">Add lvl after current</button>
+      <button type="button" class="secondary" id="btnLoadSample">Sample Presets</button>
+      <button type="button" class="secondary" id="btnCopy">Копировать TSV</button>
       <input type="file" id="fileInputFallback" accept=".tsv,.txt,.csv" hidden />
     </div>
   </header>
@@ -249,7 +260,14 @@
     let fileName = "";
     let dirty = false;
 
-    const hasFSAccess = typeof window.showOpenFilePicker === "function" && typeof window.showSaveFilePicker === "function";
+    const isSecureWebContext = window.isSecureContext && window.location.protocol !== "file:";
+    const hasFSAccess = isSecureWebContext && typeof window.showOpenFilePicker === "function" && typeof window.showSaveFilePicker === "function";
+
+    function reindexLevels() {
+      levels.forEach((lvl, idx) => {
+        lvl.levelId = idx + 1;
+      });
+    }
 
     // --- History (Undo / Redo) ---
     let history = [];
@@ -314,10 +332,11 @@
     function toTsv() {
       const header = "level\twave\tsubwave\ttype\tdelay\tcount\tinterval\tspawn_x_min\tspawn_x_max";
       const lines = [header];
-      levels.forEach(lvl => {
+      levels.forEach((lvl, idx) => {
+        const lvlNum = idx + 1;
         lvl.rows.forEach(r => {
           lines.push([
-            lvl.levelId,
+            lvlNum,
             r.wave,
             r.subwave,
             r.type,
@@ -341,6 +360,7 @@
       const hasLevelCol = hasHeader ? firstCols[0] === "level" : (rawLines[0].split("\t").length >= 9);
 
       const levelMap = new Map();
+      const levelOrder = [];
 
       for (let i = hasHeader ? 1 : 0; i < rawLines.length; i++) {
         const cols = rawLines[i].split("\t");
@@ -361,21 +381,20 @@
           spawn_x_max: parseFloat(cols[offset + 7]) || 1070,
         };
 
-        if (!levelMap.has(lvlId)) levelMap.set(lvlId, []);
+        if (!levelMap.has(lvlId)) {
+          levelMap.set(lvlId, []);
+          levelOrder.push(lvlId);
+        }
         levelMap.get(lvlId).push(row);
       }
 
-      const result = [];
-      Array.from(levelMap.keys()).sort((a, b) => a - b).forEach(id => {
-        result.push({ levelId: id, rows: levelMap.get(id) });
-      });
-      return result;
+      return levelOrder.map((id, idx) => ({ levelId: idx + 1, rows: levelMap.get(id) }));
     }
 
     // --- File Operations (Open / Save / Save As) ---
     async function openFile() {
-      try {
-        if (hasFSAccess) {
+      if (hasFSAccess) {
+        try {
           const [handle] = await window.showOpenFilePicker({
             multiple: false,
             types: [{
@@ -399,11 +418,12 @@
           render(true);
           toast("Открыт: " + fileName);
           return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+          // Если SecurityError или другое ограничение — падаем в fallback ниже
         }
-        document.getElementById("fileInputFallback").click();
-      } catch (err) {
-        if (err && err.name !== "AbortError") toast("Ошибка открытия: " + err.message, true);
       }
+      document.getElementById("fileInputFallback").click();
     }
 
     document.getElementById("fileInputFallback").onchange = (e) => {
@@ -430,9 +450,26 @@
       reader.readAsText(f);
     };
 
+    function downloadTsvFallback(targetName) {
+      const tsv = toTsv();
+      const blob = new Blob([tsv], { type: "text/tab-separated-values;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = targetName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      fileName = targetName;
+      dirty = false;
+      updateBadge();
+      toast("Сохранено (скачан): " + targetName);
+    }
+
     async function saveFile() {
-      try {
-        if (fileHandle && hasFSAccess) {
+      const defaultName = fileName || `level_${String(levels[0]?.levelId || 1).padStart(2, "0")}.tsv`;
+      if (fileHandle && hasFSAccess) {
+        try {
           const writable = await fileHandle.createWritable();
           await writable.write(toTsv());
           await writable.close();
@@ -440,18 +477,22 @@
           updateBadge();
           toast("Сохранено: " + fileName);
           return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
         }
+      }
+      if (hasFSAccess) {
         await saveFileAs();
-      } catch (err) {
-        if (err && err.name !== "AbortError") toast("Ошибка сохранения: " + err.message, true);
+      } else {
+        downloadTsvFallback(defaultName);
       }
     }
 
     async function saveFileAs() {
       const tsv = toTsv();
       const defaultName = fileName || `level_${String(levels[0]?.levelId || 1).padStart(2, "0")}.tsv`;
-      try {
-        if (hasFSAccess) {
+      if (hasFSAccess) {
+        try {
           const handle = await window.showSaveFilePicker({
             suggestedName: defaultName,
             types: [{
@@ -468,23 +509,19 @@
           updateBadge();
           toast("Сохранено: " + fileName);
           return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
         }
-        const blob = new Blob([tsv], { type: "text/tab-separated-values;charset=utf-8" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = defaultName;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        dirty = false;
-        updateBadge();
-        toast("Скачан: " + defaultName);
-      } catch (err) {
-        if (err && err.name !== "AbortError") toast("Ошибка Save As: " + err.message, true);
       }
+      const customName = prompt("Имя файла для сохранения:", defaultName);
+      if (!customName) return;
+      const finalName = customName.endsWith(".tsv") ? customName : customName + ".tsv";
+      downloadTsvFallback(finalName);
     }
 
     // --- Render & Editing ---
     function render(recordHistory = true) {
+      reindexLevels();
       if (recordHistory) pushHistory();
       updateBadge();
 
@@ -511,10 +548,10 @@
               <td><input type="number" step="1" value="${r.spawn_x_min}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'spawn_x_min', this.value)" /></td>
               <td><input type="number" step="1" value="${r.spawn_x_max}" onchange="updateCell(${lvlIdx}, ${rIdx}, 'spawn_x_max', this.value)" /></td>
               <td class="actions">
-                <button onclick="moveRow(${lvlIdx}, ${rIdx}, -1)" title="Вверх">▲</button>
-                <button onclick="moveRow(${lvlIdx}, ${rIdx}, 1)" title="Вниз">▼</button>
-                <button onclick="dupRow(${lvlIdx}, ${rIdx})" title="Дублировать">⧉</button>
-                <button class="danger" onclick="delRow(${lvlIdx}, ${rIdx})" title="Удалить">✕</button>
+                <button type="button" onclick="moveRow(${lvlIdx}, ${rIdx}, -1)" title="Вверх">▲</button>
+                <button type="button" onclick="moveRow(${lvlIdx}, ${rIdx}, 1)" title="Вниз">▼</button>
+                <button type="button" onclick="dupRow(${lvlIdx}, ${rIdx})" title="Дублировать">⧉</button>
+                <button type="button" class="danger" onclick="delRow(${lvlIdx}, ${rIdx})" title="Удалить">✕</button>
               </td>
             </tr>
           `;
@@ -524,9 +561,11 @@
           <div class="level-header" onclick="activeLevelIndex = ${lvlIdx}; render(false);">
             <span>${String(lvl.levelId).padStart(2, "0")}</span>
             <span>Уровень ${lvl.levelId} (Строк: ${lvl.rows.length})</span>
-            <div style="margin-left:auto; display:flex; gap:6px;">
-              <button class="success" onclick="event.stopPropagation(); addWave(${lvlIdx})">+ Add wave</button>
-              <button class="danger" onclick="event.stopPropagation(); deleteLevel(${lvlIdx})">Удалить уровень</button>
+            <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+              <button type="button" class="secondary move-lvl" onclick="event.stopPropagation(); moveLevel(${lvlIdx}, -1)" ${lvlIdx === 0 ? "disabled" : ""} title="Переместить уровень вверх">▲</button>
+              <button type="button" class="secondary move-lvl" onclick="event.stopPropagation(); moveLevel(${lvlIdx}, 1)" ${lvlIdx === levels.length - 1 ? "disabled" : ""} title="Переместить уровень вниз">▼</button>
+              <button type="button" class="success" onclick="event.stopPropagation(); addWave(${lvlIdx})">+ Add wave</button>
+              <button type="button" class="danger" onclick="event.stopPropagation(); deleteLevel(${lvlIdx})">Удалить уровень</button>
             </div>
           </div>
           <table>
@@ -553,6 +592,20 @@
       renderSummary();
     }
 
+    function moveLevel(lvlIdx, dir) {
+      const target = lvlIdx + dir;
+      if (target < 0 || target >= levels.length) return;
+      const temp = levels[lvlIdx];
+      levels[lvlIdx] = levels[target];
+      levels[target] = temp;
+
+      if (activeLevelIndex === lvlIdx) activeLevelIndex = target;
+      else if (activeLevelIndex === target) activeLevelIndex = lvlIdx;
+
+      dirty = true;
+      render(true);
+    }
+
     function updateCell(lvlIdx, rIdx, field, val) {
       let v = val;
       if (["wave", "count"].includes(field)) v = parseInt(val, 10) || 1;
@@ -561,7 +614,6 @@
       const rows = levels[lvlIdx].rows;
       rows[rIdx][field] = v;
 
-      // Номер волны влияет на номер субволны
       if (field === "wave") {
         const sameWaveBefore = rows.slice(0, rIdx).filter(r => r.wave === v).length;
         rows[rIdx].subwave = `${v}.${sameWaveBefore + 1}`;
@@ -685,16 +737,14 @@
     document.getElementById("btnRedo").onclick = redo;
 
     document.getElementById("btnAddLvl").onclick = () => {
-      const currentLvl = levels[activeLevelIndex] || levels[levels.length - 1];
-      const nextId = (currentLvl ? currentLvl.levelId : levels.length) + 1;
       levels.splice(activeLevelIndex + 1, 0, {
-        levelId: nextId,
+        levelId: activeLevelIndex + 2,
         rows: [{ wave: 1, subwave: "1.1", type: "goblin", delay: 0, count: 5, interval: 3, spawn_x_min: 55, spawn_x_max: 1070 }]
       });
       activeLevelIndex++;
       dirty = true;
       render(true);
-      toast(`Добавлен уровень ${String(nextId).padStart(2, "0")}`);
+      toast(`Добавлен уровень ${String(activeLevelIndex + 1).padStart(2, "0")}`);
     };
 
     document.getElementById("btnLoadSample").onclick = () => {
@@ -723,8 +773,18 @@
     };
 
     document.getElementById("btnCopy").onclick = async () => {
-      await navigator.clipboard.writeText(toTsv());
-      toast("TSV скопирован в буфер");
+      try {
+        await navigator.clipboard.writeText(toTsv());
+        toast("TSV скопирован в буфер");
+      } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = toTsv();
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        toast("TSV скопирован в буфер");
+      }
     };
 
     document.addEventListener("keydown", (e) => {

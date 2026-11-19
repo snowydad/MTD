@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://dy4qackg0nt3s"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/enemies/goblin_swift/goblin_swift.atlas"
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

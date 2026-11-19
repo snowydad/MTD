@@ -1,0 +1,13 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+uid="uid://iumbhh0b3ccl"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/enemies/goblin_swift/goblin_swift.skel"
+
+[params]
+
