@@ -6,10 +6,14 @@ extends RefCounted
 const ENEMIES_PATH := "res://assets/data/enemies.tsv"
 const ECONOMY_PATH := "res://assets/data/economy.tsv"
 const UNITS_PATH := "res://assets/data/units.json"
+const FORGE_PATH := "res://assets/data/forge_upgrades.tsv"
 
 static var _enemies: Dictionary = {}
 static var _economy: Dictionary = {}
 static var _units: Dictionary = {}
+## id → { id, unit, stat, max_rank, cost_base, cost_step, unlock_level, bonus_per_rank, label }
+static var _forge: Dictionary = {}
+static var _forge_order: Array = []
 static var _loaded: bool = false
 
 
@@ -19,9 +23,12 @@ static func _ensure() -> void:
 	_loaded = true
 	_enemies = {}
 	_economy = {}
+	_forge = {}
+	_forge_order = []
 	_load_enemies()
 	_load_economy()
 	_load_units()
+	_load_forge()
 
 
 static func reload() -> void:
@@ -202,3 +209,91 @@ static func unit_cost_base(type: String) -> int:
 	if t == "cannon" or t == "mortar":
 		key = "unit_cost_mortar"
 	return int(_economy.get(key, "6"))
+
+
+static func _load_forge() -> void:
+	_forge = {}
+	_forge_order = []
+	if not FileAccess.file_exists(FORGE_PATH):
+		push_warning("GameData: нет " + FORGE_PATH)
+		return
+	var f := FileAccess.open(FORGE_PATH, FileAccess.READ)
+	if f == null:
+		return
+	f.get_line()  # header
+	while not f.eof_reached():
+		var line := f.get_line().strip_edges()
+		if line.is_empty() or line.begins_with("#"):
+			continue
+		var c := line.split("\t")
+		if c.size() < 8:
+			continue
+		var id := c[0].strip_edges()
+		var unit := c[1].strip_edges().to_lower()
+		if unit == "mortar":
+			unit = "cannon"
+		var stat := c[2].strip_edges().to_lower()
+		if stat == "distance":
+			stat = "range"
+		if stat == "speed" or stat == "as":
+			stat = "fire_rate"
+		var entry := {
+			"id": id,
+			"unit": unit,
+			"stat": stat,
+			"max_rank": int(c[3]),
+			"cost_base": int(c[4]),
+			"cost_step": int(c[5]),
+			"unlock_level": int(c[6]),
+			"bonus_per_rank": float(c[7]),
+			"label": c[8].strip_edges() if c.size() >= 9 else id,
+		}
+		_forge[id] = entry
+		_forge_order.append(id)
+	f.close()
+	print("GameData: forge upgrades ", _forge_order)
+
+
+static func forge_upgrade_ids() -> Array:
+	_ensure()
+	return _forge_order.duplicate()
+
+
+static func forge_upgrade(id: String) -> Dictionary:
+	_ensure()
+	return _forge.get(id, {})
+
+
+static func forge_cost(id: String, current_rank: int) -> int:
+	## Цена покупки следующего ранга (rank → rank+1). current_rank = уже купленный.
+	var u := forge_upgrade(id)
+	if u.is_empty():
+		return 0
+	var max_r := int(u.get("max_rank", 0))
+	if current_rank >= max_r:
+		return 0
+	return int(u.get("cost_base", 50)) + current_rank * int(u.get("cost_step", 25))
+
+
+static func forge_multiplier_for_unit(unit: String, ranks: Dictionary) -> Dictionary:
+	## ranks: upgrade_id → rank. Возвращает { "range": 1.x, "fire_rate": 1.x } для unit.
+	_ensure()
+	var t := unit.to_lower()
+	if t == "mortar":
+		t = "cannon"
+	var range_m := 1.0
+	var rate_m := 1.0
+	for id in _forge_order:
+		var u: Dictionary = _forge[id]
+		if str(u.get("unit", "")) != t:
+			continue
+		var rank := int(ranks.get(id, 0))
+		if rank <= 0:
+			continue
+		var bonus := float(u.get("bonus_per_rank", 0.0)) * float(rank)
+		match str(u.get("stat", "")):
+			"range":
+				range_m *= 1.0 + bonus
+			"fire_rate":
+				rate_m *= 1.0 + bonus
+	return {"range": range_m, "fire_rate": rate_m}

@@ -86,6 +86,14 @@ func _apply_stats() -> void:
 	splash_radius = float(base.get("splash_radius", 0.0))
 	accuracy = 1.0
 
+	# Мета-апгрейды кузницы (Distance / Fire Rate) — из ProgressData.
+	var pd := _progress()
+	if pd != null and pd.has_method("unit_forge_multipliers"):
+		var fm: Dictionary = pd.unit_forge_multipliers(_type_key())
+		attack_range *= float(fm.get("range", 1.0))
+		attack_speed *= float(fm.get("fire_rate", 1.0))
+
+	# Боевые перки волны (main).
 	var tree := get_tree()
 	if tree == null:
 		return
@@ -214,3 +222,10 @@ func _fire_at(target: Enemy) -> void:
 			proj.launch(from, target, dhp, mhp, amp, accuracy, level, splash_radius)
 		_:
 			proj.launch(from, target, dhp, mhp, amp, accuracy)
+
+
+func _progress() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("ProgressData")

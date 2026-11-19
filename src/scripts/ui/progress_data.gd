@@ -13,8 +13,12 @@ var music_on: bool = true
 var language: String = "en"  # en | ru
 var player_id: String = ""
 
+## id апгрейда кузницы → купленный ранг (0 = не куплен).
+var forge_ranks: Dictionary = {}
+
 signal gold_changed(value: int)
 signal progress_changed
+signal forge_changed
 
 
 func _ready() -> void:
@@ -66,6 +70,57 @@ func set_gold(value: int) -> void:
 	save()
 
 
+func forge_rank(id: String) -> int:
+	return int(forge_ranks.get(id, 0))
+
+
+func forge_is_unlocked(id: String) -> bool:
+	var u: Dictionary = GameData.forge_upgrade(id)
+	if u.is_empty():
+		return false
+	return max_unlocked_level >= int(u.get("unlock_level", 1))
+
+
+func forge_is_maxed(id: String) -> bool:
+	var u: Dictionary = GameData.forge_upgrade(id)
+	if u.is_empty():
+		return true
+	return forge_rank(id) >= int(u.get("max_rank", 0))
+
+
+func forge_next_cost(id: String) -> int:
+	if forge_is_maxed(id):
+		return 0
+	return GameData.forge_cost(id, forge_rank(id))
+
+
+func can_buy_forge(id: String) -> bool:
+	if not forge_is_unlocked(id):
+		return false
+	if forge_is_maxed(id):
+		return false
+	return gold >= forge_next_cost(id)
+
+
+## Покупка следующего ранга. true если успешно.
+func buy_forge(id: String) -> bool:
+	if not can_buy_forge(id):
+		return false
+	var cost := forge_next_cost(id)
+	gold = maxi(0, gold - cost)
+	forge_ranks[id] = forge_rank(id) + 1
+	gold_changed.emit(gold)
+	forge_changed.emit()
+	progress_changed.emit()
+	save()
+	return true
+
+
+## Множители кузницы для типа юнита: { "range": 1.x, "fire_rate": 1.x }
+func unit_forge_multipliers(unit_type: String) -> Dictionary:
+	return GameData.forge_multiplier_for_unit(unit_type, forge_ranks)
+
+
 func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("progress", "gold", gold)
@@ -75,6 +130,13 @@ func save() -> void:
 	cfg.set_value("settings", "music_on", music_on)
 	cfg.set_value("settings", "language", language)
 	cfg.set_value("player", "id", player_id)
+	## ranks as "id:rank,id:rank"
+	var parts: PackedStringArray = PackedStringArray()
+	for k in forge_ranks.keys():
+		var r := int(forge_ranks[k])
+		if r > 0:
+			parts.append("%s:%d" % [str(k), r])
+	cfg.set_value("forge", "ranks", ",".join(parts))
 	cfg.save(SAVE_PATH)
 
 
@@ -92,5 +154,13 @@ func load_save() -> void:
 	player_id = str(cfg.get_value("player", "id", player_id))
 	max_unlocked_level = maxi(1, max_unlocked_level)
 	selected_level = clampi(selected_level, 1, maxi(max_unlocked_level, 1))
+	forge_ranks = {}
+	var ranks_str := str(cfg.get_value("forge", "ranks", ""))
+	if not ranks_str.is_empty():
+		for part in ranks_str.split(","):
+			var kv := part.strip_edges().split(":")
+			if kv.size() >= 2:
+				forge_ranks[str(kv[0])] = int(kv[1])
 	gold_changed.emit(gold)
 	progress_changed.emit()
+	forge_changed.emit()
