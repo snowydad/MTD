@@ -160,9 +160,9 @@ func _process(delta: float) -> void:
 	if _game_over or _paused:
 		return
 
-	# Копим до самой дорогой «следующей» цены среди трёх типов
-	var cap := float(maxi(_cost_for(Unit.UnitType.ARCHER), maxi(_cost_for(Unit.UnitType.MAGE), _cost_for(Unit.UnitType.CANNON))))
-	if charge < cap:
+	# Копим до самой дорогой цены среди *открытых* юнитов
+	var cap := float(_max_open_unit_cost())
+	if cap > 0.0 and charge < cap:
 		charge = minf(charge + fill_rate * delta, cap)
 	_update_buttons()
 
@@ -751,15 +751,64 @@ func _register_purchase(unit_type: Unit.UnitType) -> void:
 			bought_cannon += 1
 
 
+func _unit_type_key(unit_type: Unit.UnitType) -> String:
+	match unit_type:
+		Unit.UnitType.MAGE:
+			return "mage"
+		Unit.UnitType.CANNON:
+			return "cannon"
+		_:
+			return "archer"
+
+
+func _meta_level() -> int:
+	var pd := _progress()
+	if pd != null:
+		return int(pd.max_unlocked_level)
+	return 1
+
+
+func _is_unit_open(unit_type: Unit.UnitType) -> bool:
+	return GameData.is_unit_open(_unit_type_key(unit_type), _meta_level())
+
+
+func _max_open_unit_cost() -> int:
+	var best := 0
+	for t in [Unit.UnitType.ARCHER, Unit.UnitType.MAGE, Unit.UnitType.CANNON]:
+		if _is_unit_open(t):
+			best = maxi(best, _cost_for(t))
+	return best
+
+
 func _update_buttons() -> void:
 	if _game_over:
 		return
-	_refresh_button(btn_archer, "Лучник", _cost_for(Unit.UnitType.ARCHER))
-	_refresh_button(btn_mage, "Маг", _cost_for(Unit.UnitType.MAGE))
-	_refresh_button(btn_cannon, "Мортира", _cost_for(Unit.UnitType.CANNON))
+	_refresh_unit_button(btn_archer, "Лучник", Unit.UnitType.ARCHER)
+	_refresh_unit_button(btn_mage, "Маг", Unit.UnitType.MAGE)
+	_refresh_unit_button(btn_cannon, "Мортира", Unit.UnitType.CANNON)
+
+
+func _refresh_unit_button(btn: Button, title: String, unit_type: Unit.UnitType) -> void:
+	if btn == null:
+		return
+	## Сколько юнитов открыто по open_level — столько кнопок видно.
+	if not _is_unit_open(unit_type):
+		btn.visible = false
+		btn.disabled = true
+		return
+	btn.visible = true
+	var cost := _cost_for(unit_type)
+	var filled := int(charge)
+	if filled >= cost:
+		btn.text = "%s\n%d" % [title, cost]
+		btn.disabled = false
+	else:
+		btn.text = "%s\n%d/%d" % [title, filled, cost]
+		btn.disabled = true
 
 
 func _refresh_button(btn: Button, title: String, cost: int) -> void:
+	## legacy helper
 	var filled := int(charge)
 	if filled >= cost:
 		btn.text = "%s\n%d" % [title, cost]
@@ -771,6 +820,8 @@ func _refresh_button(btn: Button, title: String, cost: int) -> void:
 
 func _on_spawn_pressed(unit_type: Unit.UnitType) -> void:
 	if _game_over:
+		return
+	if not _is_unit_open(unit_type):
 		return
 	var cost := _cost_for(unit_type)
 	if charge < cost:

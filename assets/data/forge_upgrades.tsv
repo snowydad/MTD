@@ -1,7 +1,7 @@
-id	unit	stat	max_rank	cost_base	cost_step	unlock_level	bonus_per_rank	label
-archer_distance	archer	range	5	50	25	2	0.10	Archer / Distance
-archer_fire_rate	archer	fire_rate	5	50	25	3	0.10	Archer / Fire Rate
-mage_distance	mage	range	5	60	30	3	0.10	Mage / Distance
-mage_fire_rate	mage	fire_rate	5	60	30	4	0.10	Mage / Fire Rate
-cannon_distance	cannon	range	5	70	35	4	0.10	Mortar / Distance
-cannon_fire_rate	cannon	fire_rate	5	70	35	5	0.10	Mortar / Fire Rate
+id	unit	stat	max_rank	cost_base	cost_step	unlock_level	open_level	bonus_per_rank	label
+archer_distance	archer	range	5	50	25	1	1	0.10	Archer / Distance
+archer_fire_rate	archer	fire_rate	5	50	25	1	1	0.10	Archer / Fire Rate
+mage_distance	mage	range	5	60	30	1	2	0.10	Mage / Distance
+mage_fire_rate	mage	fire_rate	5	60	30	1	2	0.10	Mage / Fire Rate
+cannon_distance	cannon	range	5	70	35	1	3	0.10	Mortar / Distance
+cannon_fire_rate	cannon	fire_rate	5	70	35	1	3	0.10	Mortar / Fire Rate

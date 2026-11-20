@@ -14,6 +14,8 @@ static var _units: Dictionary = {}
 ## id → { id, unit, stat, max_rank, cost_base, cost_step, unlock_level, bonus_per_rank, label }
 static var _forge: Dictionary = {}
 static var _forge_order: Array = []
+## unit → open_level (meta progress)
+static var _unit_open: Dictionary = {}
 static var _loaded: bool = false
 
 
@@ -25,6 +27,7 @@ static func _ensure() -> void:
 	_economy = {}
 	_forge = {}
 	_forge_order = []
+	_unit_open = {}
 	_load_enemies()
 	_load_economy()
 	_load_units()
@@ -214,6 +217,7 @@ static func unit_cost_base(type: String) -> int:
 static func _load_forge() -> void:
 	_forge = {}
 	_forge_order = []
+	_unit_open = {}
 	if not FileAccess.file_exists(FORGE_PATH):
 		push_warning("GameData: нет " + FORGE_PATH)
 		return
@@ -226,6 +230,8 @@ static func _load_forge() -> void:
 		if line.is_empty() or line.begins_with("#"):
 			continue
 		var c := line.split("\t")
+		## id unit stat max_rank cost_base cost_step unlock_level open_level bonus label
+		## legacy without open_level: 9 cols → open_level=1, bonus at [7]
 		if c.size() < 8:
 			continue
 		var id := c[0].strip_edges()
@@ -237,6 +243,20 @@ static func _load_forge() -> void:
 			stat = "range"
 		if stat == "speed" or stat == "as":
 			stat = "fire_rate"
+		var unlock_level := int(c[6])
+		var open_level := 1
+		var bonus := 0.10
+		var label := id
+		if c.size() >= 10:
+			open_level = int(c[7])
+			bonus = float(c[8])
+			label = c[9].strip_edges()
+		elif c.size() >= 9:
+			## old: unlock, bonus, label
+			bonus = float(c[7])
+			label = c[8].strip_edges()
+		else:
+			bonus = float(c[7]) if c.size() >= 8 else 0.10
 		var entry := {
 			"id": id,
 			"unit": unit,
@@ -244,14 +264,20 @@ static func _load_forge() -> void:
 			"max_rank": int(c[3]),
 			"cost_base": int(c[4]),
 			"cost_step": int(c[5]),
-			"unlock_level": int(c[6]),
-			"bonus_per_rank": float(c[7]),
-			"label": c[8].strip_edges() if c.size() >= 9 else id,
+			"unlock_level": unlock_level,
+			"open_level": open_level,
+			"bonus_per_rank": bonus,
+			"label": label,
 		}
 		_forge[id] = entry
 		_forge_order.append(id)
+		## unit open = min open_level across rows (first wins if smaller)
+		if not _unit_open.has(unit):
+			_unit_open[unit] = open_level
+		else:
+			_unit_open[unit] = mini(int(_unit_open[unit]), open_level)
 	f.close()
-	print("GameData: forge upgrades ", _forge_order)
+	print("GameData: forge upgrades ", _forge_order, " unit_open ", _unit_open)
 
 
 static func forge_upgrade_ids() -> Array:
@@ -297,3 +323,16 @@ static func forge_multiplier_for_unit(unit: String, ranks: Dictionary) -> Dictio
 			"fire_rate":
 				rate_m *= 1.0 + bonus
 	return {"range": range_m, "fire_rate": rate_m}
+
+
+static func unit_open_level(unit: String) -> int:
+	_ensure()
+	var t := unit.to_lower()
+	if t == "mortar":
+		t = "cannon"
+	return int(_unit_open.get(t, 1))
+
+
+static func is_unit_open(unit: String, meta_level: int) -> bool:
+	## Юнит доступен в бою / forge, если прогресс >= open_level.
+	return meta_level >= unit_open_level(unit)
