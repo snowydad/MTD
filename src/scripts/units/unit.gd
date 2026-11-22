@@ -5,8 +5,9 @@ const Z_UNITS := 40
 const Z_UNIT_JUMP := 45
 
 ## Базовый юнит на стене.
-## Статы из UnitStats. После приземления ищет врагов и стреляет.
+## Статы из GameData/units.json. После приземления ищет врагов и стреляет.
 ## Мерж: 3 одинаковых → 1 следующего уровня.
+## Spine: idle loop; attack one-shot с задержкой вылета снаряда (attack_moment).
 
 enum UnitType { ARCHER, MAGE, CANNON }
 
@@ -35,6 +36,12 @@ var target_global: Vector2 = Vector2.ZERO
 @export var projectile_scene: PackedScene
 @export var arrow_flight_time: float = 0.45
 @export var muzzle_offset: Vector2 = Vector2(0, -40)
+## Доля/секунды от начала attack-анимации до появления снаряда.
+@export var attack_moment: float = 0.0
+
+@export_group("Spine")
+@export var spine_idle_animation: String = "idle"
+@export var spine_attack_animation: String = "attack"
 
 var _flying: bool = false
 var _velocity: Vector2 = Vector2.ZERO
@@ -43,12 +50,26 @@ var _flight_max: float = 0.0
 var _landed: bool = false
 var _attack_cd: float = 0.0
 
+## Идёт анимация атаки; снаряд ждёт attack_moment.
+var _attacking: bool = false
+var _attack_timer: float = 0.0
+var _shot_done: bool = false
+var _pending_target: Enemy = null
+
 ## Занят мержем (не брать в новую тройку). Во время паузы ещё стреляет.
 var merge_locked: bool = false
 ## Сейчас съезжается — не атакует.
 var is_merging: bool = false
 
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var sprite: Sprite2D = get_node_or_null("Sprite2D") as Sprite2D
+@onready var spine = get_node_or_null("SpineSprite")
+
+var _spine_state = null
+var _current_spine_animation: String = ""
+
+
+func _ready() -> void:
+	_init_spine()
 
 
 func setup(type: UnitType, lvl: int = 1) -> void:
@@ -58,6 +79,25 @@ func setup(type: UnitType, lvl: int = 1) -> void:
 	_apply_visual_level()
 	_landed = false
 	_attack_cd = 0.15
+	_attacking = false
+	_attack_timer = 0.0
+	_shot_done = false
+	_pending_target = null
+	_init_spine()
+	_play_spine_idle()
+
+
+func _init_spine() -> void:
+	if spine == null:
+		spine = get_node_or_null("SpineSprite")
+	if spine == null:
+		_spine_state = null
+		return
+	if spine.has_method("get_animation_state"):
+		_spine_state = spine.get_animation_state()
+	# Скрыть статичный спрайт, если есть Spine.
+	if sprite != null:
+		sprite.visible = false
 
 
 func _type_key() -> String:
@@ -119,9 +159,19 @@ func _apply_visual_level() -> void:
 		1:
 			sprite.modulate = Color.WHITE
 		2:
-			sprite.modulate = Color(1.15, 1.05, 0.75)  # тёплый «прокачанный»
+			sprite.modulate = Color(1.15, 1.05, 0.75)
 		_:
 			sprite.modulate = Color(1.25, 0.95, 0.55)
+	if spine != null:
+		var ss := 0.6 * (1.0 + (level - 1) * 0.12)
+		spine.scale = Vector2(ss, ss)
+		match level:
+			1:
+				spine.modulate = Color.WHITE
+			2:
+				spine.modulate = Color(1.15, 1.05, 0.75)
+			_:
+				spine.modulate = Color(1.25, 0.95, 0.55)
 
 
 func upgrade_to_level(new_level: int) -> void:
@@ -136,6 +186,8 @@ func play_spawn_jump(from_global: Vector2, to_global: Vector2) -> void:
 	target_global = to_global
 	z_index = Z_UNIT_JUMP
 	_landed = false
+	_attacking = false
+	_pending_target = null
 
 	var T := jump_duration
 	var dx := to_global.x - from_global.x
@@ -144,6 +196,7 @@ func play_spawn_jump(from_global: Vector2, to_global: Vector2) -> void:
 	_flight_time = 0.0
 	_flight_max = T
 	_flying = true
+	_play_spine_idle()
 
 
 func _process(delta: float) -> void:
@@ -157,6 +210,7 @@ func _process(delta: float) -> void:
 			z_index = Z_UNITS
 			_landed = true
 			landed.emit(self)
+			_play_spine_idle()
 		return
 
 	if not _landed:
@@ -164,12 +218,57 @@ func _process(delta: float) -> void:
 	if is_merging:
 		return
 
+	if _attacking:
+		_process_attack(delta)
+		return
+
 	_attack_cd -= delta
 	if _attack_cd <= 0.0:
 		var target := _find_target()
 		if target != null:
-			_fire_at(target)
-			_attack_cd = 1.0 / maxf(attack_speed, 0.05)
+			_begin_attack(target)
+		else:
+			_play_spine_idle()
+
+
+func _begin_attack(target: Enemy) -> void:
+	_attacking = true
+	_attack_timer = 0.0
+	_shot_done = false
+	_pending_target = target
+	_play_spine_attack()
+	# Если moment = 0 — стреляем сразу (маг/пушка без отдельного кадра выстрела).
+	if attack_moment <= 0.0:
+		_release_shot()
+
+
+func _process_attack(delta: float) -> void:
+	_attack_timer += delta
+	var period := 1.0 / maxf(attack_speed, 0.05)
+	var moment := clampf(attack_moment, 0.0, period)
+
+	if not _shot_done and _attack_timer >= moment:
+		_release_shot()
+
+	# Конец цикла атаки — снова idle и кулдаун на остаток периода.
+	if _attack_timer >= period:
+		_attacking = false
+		_pending_target = null
+		_attack_cd = 0.0  # period already consumed by timer; next frame can re-acquire
+		# Небольшой анти-спам: если shot только что, не бить дважды в один кадр
+		_attack_cd = 0.001
+		_play_spine_idle()
+
+
+func _release_shot() -> void:
+	if _shot_done:
+		return
+	_shot_done = true
+	var target := _pending_target
+	if target == null or not is_instance_valid(target) or not target._alive:
+		# Цель пропала — всё равно завершаем цикл без выстрела.
+		return
+	_fire_at(target)
 
 
 func move_to_slot(to_global: Vector2) -> void:
@@ -212,7 +311,6 @@ func _fire_at(target: Enemy) -> void:
 		parent = get_tree().current_scene
 	parent.add_child(proj)
 	var from := global_position + muzzle_offset
-	# Снаряды принимают разный launch: стрела / фаербол / бомба
 	match unit_type:
 		UnitType.ARCHER:
 			proj.launch(from, target, dhp, mhp, amp, accuracy, arrow_flight_time)
@@ -222,6 +320,25 @@ func _fire_at(target: Enemy) -> void:
 			proj.launch(from, target, dhp, mhp, amp, accuracy, level, splash_radius)
 		_:
 			proj.launch(from, target, dhp, mhp, amp, accuracy)
+
+
+func _play_spine_idle() -> void:
+	_play_spine_animation(spine_idle_animation, true)
+
+
+func _play_spine_attack() -> void:
+	_play_spine_animation(spine_attack_animation, false)
+
+
+func _play_spine_animation(animation_name: String, loop: bool) -> void:
+	if _spine_state == null:
+		_init_spine()
+	if _spine_state == null:
+		return
+	if loop and _current_spine_animation == animation_name:
+		return
+	_spine_state.set_animation(animation_name, loop, 0)
+	_current_spine_animation = animation_name
 
 
 func _progress() -> Node:
