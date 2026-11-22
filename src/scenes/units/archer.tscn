@@ -1,18 +1,29 @@
-[gd_scene load_steps=4 format=3 uid="uid://carcher001"]
+[gd_scene format=3 uid="uid://carcher001"]
 
-[ext_resource type="Script" path="res://src/scripts/units/unit.gd" id="1_unit"]
-[ext_resource type="Texture2D" path="res://assets/sprites/units/archer/archer_1.png" id="2_tex"]
-[ext_resource type="PackedScene" path="res://src/scenes/projectiles/arrow.tscn" id="3_arrow"]
+[ext_resource type="Script" uid="uid://bqhqtyqf06v4d" path="res://src/scripts/units/unit.gd" id="1_unit"]
+[ext_resource type="Texture2D" uid="uid://c1hv7xqdy27e6" path="res://assets/sprites/units/archer/archer_1.png" id="2_tex"]
+[ext_resource type="PackedScene" uid="uid://carrow001" path="res://src/scenes/projectiles/arrow.tscn" id="3_arrow"]
+[ext_resource type="Texture2D" uid="uid://bdn8gg5vjunjl" path="res://assets/sprites/units/archer/archer_test.png" id="4_10wvq"]
+[ext_resource type="SpineSkeletonDataResource" uid="uid://bku6kxl2qmqvw" path="res://assets/sprites/units/archer/archer_01.tres" id="5_r41kh"]
 
-[node name="Archer" type="Node2D"]
+[node name="Archer" type="Node2D" unique_id=1075893973]
 script = ExtResource("1_unit")
-unit_type = 0
-gravity = 3200.0
-jump_duration = 0.55
-shift_duration = 0.28
 projectile_scene = ExtResource("3_arrow")
-arrow_flight_time = 0.45
-muzzle_offset = Vector2(0, -40)
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1272406643]
+visible = false
 texture = ExtResource("2_tex")
+
+[node name="ArcherTest" type="Sprite2D" parent="." unique_id=1464256445]
+visible = false
+position = Vector2(1.9999924, 1)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("4_10wvq")
+
+[node name="SpineSprite" type="SpineSprite" parent="." unique_id=288645325]
+scale = Vector2(0.6, 0.6)
+skeleton_data_res = ExtResource("5_r41kh")
+preview_skin = "Default"
+preview_animation = "attack"
+preview_frame = false
+preview_time = 0.0
