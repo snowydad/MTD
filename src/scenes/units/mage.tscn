@@ -9,11 +9,15 @@
 script = ExtResource("1")
 unit_type = 1
 projectile_scene = ExtResource("3")
+arrow_flight_time = 0.945
+muzzle_offset = Vector2(-30, -120)
+attack_moment = 0.5
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=238877675]
 texture = ExtResource("2")
 
 [node name="SpineSprite" type="SpineSprite" parent="." unique_id=801410030]
+scale = Vector2(0.6, 0.6)
 skeleton_data_res = ExtResource("4_ploua")
 preview_skin = "Default"
 preview_animation = "idle"

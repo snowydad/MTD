@@ -9,6 +9,7 @@
 [node name="Archer" type="Node2D" unique_id=1075893973]
 script = ExtResource("1_unit")
 projectile_scene = ExtResource("3_arrow")
+muzzle_offset = Vector2(0, -40)
 attack_moment = 0.25
 spine_idle_animation = "idle"
 spine_attack_animation = "attack"

@@ -35,8 +35,9 @@ var target_global: Vector2 = Vector2.ZERO
 @export_group("Combat")
 @export var projectile_scene: PackedScene
 @export var arrow_flight_time: float = 0.45
+## Точка вылета снаряда относительно unit. Задавай в СЦЕНЕ юнита (archer/mage/mortar.tscn), не в скрипте — иначе общее для всех.
 @export var muzzle_offset: Vector2 = Vector2(0, -40)
-## Доля/секунды от начала attack-анимации до появления снаряда.
+## Секунды от начала attack до появления снаряда. Тоже per-scene.
 @export var attack_moment: float = 0.0
 
 @export_group("Spine")
