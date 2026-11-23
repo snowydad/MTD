@@ -1,14 +1,21 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://b7qu5cfvwr6sg"]
 
-[ext_resource type="Script" path="res://src/scripts/units/unit.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/sprites/units/mage/mage_1.png" id="2"]
+[ext_resource type="Script" uid="uid://bqhqtyqf06v4d" path="res://src/scripts/units/unit.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://c6y5kx600u8dc" path="res://assets/sprites/units/mage/mage_1.png" id="2"]
 [ext_resource type="PackedScene" path="res://src/scenes/projectiles/fireball.tscn" id="3"]
+[ext_resource type="SpineSkeletonDataResource" uid="uid://tpi37yf7c2sd" path="res://assets/sprites/units/mage/mage.tres" id="4_ploua"]
 
-[node name="Mage" type="Node2D"]
+[node name="Mage" type="Node2D" unique_id=101801050]
 script = ExtResource("1")
 unit_type = 1
 projectile_scene = ExtResource("3")
-muzzle_offset = Vector2(0, -40)
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=238877675]
 texture = ExtResource("2")
+
+[node name="SpineSprite" type="SpineSprite" parent="." unique_id=801410030]
+skeleton_data_res = ExtResource("4_ploua")
+preview_skin = "Default"
+preview_animation = "idle"
+preview_frame = false
+preview_time = 0.0

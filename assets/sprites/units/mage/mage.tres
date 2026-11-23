@@ -1,0 +1,8 @@
+[gd_resource type="SpineSkeletonDataResource" format=3 uid="uid://tpi37yf7c2sd"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://brmddlk1230wb" path="res://assets/sprites/units/mage/mage_01.atlas" id="1_u4kmj"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://djngjchl5lnnm" path="res://assets/sprites/units/mage/mage_01.skel" id="2_d5ls0"]
+
+[resource]
+atlas_res = ExtResource("1_u4kmj")
+skeleton_file_res = ExtResource("2_d5ls0")

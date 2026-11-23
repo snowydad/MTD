@@ -1,0 +1,13 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+uid="uid://djngjchl5lnnm"
+valid=false
+
+[deps]
+
+source_file="res://assets/sprites/units/mage/mage_01.skel"
+
+[params]
+

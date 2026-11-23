@@ -1,0 +1,15 @@
+mage_01.png
+size:309,254
+filter:Linear,Linear
+black
+bounds:2,2,70,38
+body
+bounds:2,42,174,146
+hand_l
+bounds:237,148,66,104
+head
+bounds:178,10,136,129
+rotate:90
+staff
+bounds:2,190,62,233
+rotate:90
