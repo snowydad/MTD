@@ -1,0 +1,8 @@
+[gd_resource type="SpineSkeletonDataResource" format=3 uid="uid://xtnshrkyslaw"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://c0u04bmk73w7n" path="res://assets/sprites/units/cannon/mortar_01.atlas" id="1_orpya"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://c3e2exv5qqicf" path="res://assets/sprites/units/cannon/mortar_01.skel" id="2_uwo8r"]
+
+[resource]
+atlas_res = ExtResource("1_orpya")
+skeleton_file_res = ExtResource("2_uwo8r")

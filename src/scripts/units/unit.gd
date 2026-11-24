@@ -51,10 +51,12 @@ var _flight_max: float = 0.0
 var _landed: bool = false
 var _attack_cd: float = 0.0
 
-## Идёт анимация атаки; снаряд ждёт attack_moment.
+## Идёт цикл атаки (кулдаун периода); снаряд ждёт attack_moment.
 var _attacking: bool = false
 var _attack_timer: float = 0.0
 var _shot_done: bool = false
+## Уже вернулись в idle после клипа attack (не ждём весь period).
+var _attack_anim_finished: bool = false
 var _pending_target: Enemy = null
 
 ## Занят мержем (не брать в новую тройку). Во время паузы ещё стреляет.
@@ -83,6 +85,7 @@ func setup(type: UnitType, lvl: int = 1) -> void:
 	_attacking = false
 	_attack_timer = 0.0
 	_shot_done = false
+	_attack_anim_finished = false
 	_pending_target = null
 	_init_spine()
 	_play_spine_idle()
@@ -236,29 +239,52 @@ func _begin_attack(target: Enemy) -> void:
 	_attacking = true
 	_attack_timer = 0.0
 	_shot_done = false
+	_attack_anim_finished = false
 	_pending_target = target
 	_play_spine_attack()
-	# Если moment = 0 — стреляем сразу (маг/пушка без отдельного кадра выстрела).
+	# Если moment = 0 — стреляем сразу.
 	if attack_moment <= 0.0:
 		_release_shot()
+
+
+func _attack_anim_duration() -> float:
+	## Длительность клипа attack из Spine; иначе fallback после moment.
+	if spine != null and spine.has_method("get_skeleton"):
+		var sk = spine.get_skeleton()
+		if sk != null and sk.has_method("get_data"):
+			var data = sk.get_data()
+			if data != null and data.has_method("find_animation"):
+				var anim = data.find_animation(spine_attack_animation)
+				if anim != null:
+					if "duration" in anim:
+						return maxf(float(anim.duration), 0.05)
+					if anim.has_method("get_duration"):
+						return maxf(float(anim.get_duration()), 0.05)
+	return maxf(attack_moment + 0.2, 0.4)
 
 
 func _process_attack(delta: float) -> void:
 	_attack_timer += delta
 	var period := 1.0 / maxf(attack_speed, 0.05)
 	var moment := clampf(attack_moment, 0.0, period)
+	var anim_len := minf(_attack_anim_duration(), period)
 
 	if not _shot_done and _attack_timer >= moment:
 		_release_shot()
 
-	# Конец цикла атаки — снова idle и кулдаун на остаток периода.
+	# Сразу после клипа attack → idle (не зависать на последнем кадре до конца period).
+	if not _attack_anim_finished and _attack_timer >= anim_len:
+		_attack_anim_finished = true
+		_play_spine_idle()
+
+	# Конец fire-rate периода — можно начинать следующую атаку.
 	if _attack_timer >= period:
 		_attacking = false
 		_pending_target = null
-		_attack_cd = 0.0  # period already consumed by timer; next frame can re-acquire
-		# Небольшой анти-спам: если shot только что, не бить дважды в один кадр
 		_attack_cd = 0.001
-		_play_spine_idle()
+		if not _attack_anim_finished:
+			_attack_anim_finished = true
+			_play_spine_idle()
 
 
 func _release_shot() -> void:

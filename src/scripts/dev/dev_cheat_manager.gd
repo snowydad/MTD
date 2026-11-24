@@ -2,6 +2,7 @@ extends Node
 
 ## Dev cheats (только для разработки).
 ## 0 — пауза, 1 — x1, 2 — x2
+## 3 - slowmo (0.25)
 ## [ / ] — энергия −5 / +5
 ## - / = — золото −5 / +5
 
@@ -29,6 +30,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		KEY_2:
 			Engine.time_scale = 2.0
+			print("DEV: speed x2")
+			get_viewport().set_input_as_handled()
+		KEY_3:
+			Engine.time_scale = 0.25
 			print("DEV: speed x2")
 			get_viewport().set_input_as_handled()
 		KEY_BRACKETLEFT:

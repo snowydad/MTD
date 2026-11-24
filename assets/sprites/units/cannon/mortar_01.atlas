@@ -1,0 +1,16 @@
+mortar_01.png
+size:510,214
+filter:Linear,Linear
+base
+bounds:335,2,210,82
+rotate:90
+base2
+bounds:419,26,186,89
+rotate:90
+black
+bounds:206,6,70,38
+body
+bounds:206,46,127,166
+mortar_01
+bounds:2,2,210,202
+rotate:90
