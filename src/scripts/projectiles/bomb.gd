@@ -13,6 +13,8 @@ const Z_DECOR := 10
 @export var lead_factor: float = 0.3
 @export var hit_radius: float = 36.0
 @export var stuck_lifetime: float = 2.5
+## Вращение в полёте (рад/сек). Эмиттер шлейфа — child, крутится вместе с бомбой.
+@export var spin_speed: float = 10.0
 
 var dhp: float = 0.0
 var mhp: float = 0.0
@@ -33,6 +35,7 @@ var _stuck: bool = false
 var _stuck_t: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
+@onready var trail: GPUParticles2D = get_node_or_null("GPUParticles2D") as GPUParticles2D
 
 
 func launch(from_global: Vector2, target: Enemy, p_dhp: float = 0.0, p_mhp: float = 0.0, p_amp: float = 0.0, acc: float = 1.0, lvl: int = 1, splash: float = 90.0) -> void:
@@ -49,8 +52,13 @@ func launch(from_global: Vector2, target: Enemy, p_dhp: float = 0.0, p_mhp: floa
 	_flying = true
 	_stuck = false
 	_elapsed = 0.0
+	rotation = 0.0
 	z_index = Z_PROJECTILE
 	_apply_level_look()
+	if trail != null:
+		trail.emitting = true
+		# local_coords: направление/офсет эмиттера в пространстве бомбы → крутятся вместе
+		trail.local_coords = false
 
 	_to = _aim(from_global, target, 0.7)
 	_finalize()
@@ -119,7 +127,8 @@ func _process(delta: float) -> void:
 	global_position = pos
 	if d.length_squared() > 0.2:
 		_last_dir = d
-		rotation = d.angle() + PI * 0.5
+	# Крутим всю бомбу (Sprite + GPUParticles2D child со смещением вверх).
+	rotation += spin_speed * delta
 
 	if _try_hit():
 		return
@@ -132,12 +141,14 @@ func _try_hit() -> bool:
 	if is_instance_valid(_target) and _target._alive:
 		if global_position.distance_to(_target.global_position) <= hit_radius:
 			_explode(_target)
+			_detach_trail()
 			queue_free()
 			return true
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e._alive and global_position.distance_to(e.global_position) <= hit_radius:
 			_explode(e)
+			_detach_trail()
 			queue_free()
 			return true
 	return false
@@ -162,3 +173,30 @@ func _stick() -> void:
 	z_index = Z_DECOR
 	if sprite:
 		sprite.scale *= 0.85
+	if trail != null:
+		trail.emitting = false
+		
+func _detach_trail() -> void:
+	if trail == null:
+		return
+
+	# Запоминаем мировую позицию эмиттера
+	var trail_pos := trail.global_position
+
+	# Переносим эмиттер в корень текущей сцены
+	var particles := trail
+	trail.emitting = false
+	remove_child(particles)
+	get_tree().current_scene.add_child(particles)
+
+	# Сохраняем мировую позицию
+	particles.global_position = trail_pos
+	particles.rotation = 0.0
+	particles.top_level = true
+
+	# Возобновляем эмиссию не нужно:
+	# оставшиеся частицы доживут самостоятельно
+	particles.emitting = false
+
+	# Удаляем эмиттер после окончания частиц
+	particles.finished.connect(particles.queue_free)		
