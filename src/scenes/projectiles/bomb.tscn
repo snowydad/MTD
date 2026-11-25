@@ -5,21 +5,21 @@
 [ext_resource type="Texture2D" uid="uid://b73cx7iyo4gaa" path="res://assets/sprites/fx/spark.png" id="3_kvxsf"]
 
 [sub_resource type="Gradient" id="Gradient_nhshu"]
-colors = PackedColorArray(1, 1, 1, 1, 1, 0.19607843, 0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.34509805, 0, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_kbdt0"]
 gradient = SubResource("Gradient_nhshu")
 
 [sub_resource type="Curve" id="Curve_nhshu"]
-_data = [Vector2(0, 0.52808994), 0.0, -0.52808994, 0, 1, Vector2(1, 0), 0.14211965, 0.0, 0, 0]
+_data = [Vector2(0, 0.49438208), 0.0, -0.49438208, 0, 1, Vector2(1, 0), 0.14211965, 0.0, 0, 0]
 point_count = 2
 
 [sub_resource type="CurveTexture" id="CurveTexture_kvxsf"]
 curve = SubResource("Curve_nhshu")
 
 [sub_resource type="Curve" id="Curve_jyicm"]
-_data = [Vector2(0, 0.48314613), 0.0, 5.4870543, 0, 0, Vector2(0.1837607, 1), 0.0, 0.0, 0, 0, Vector2(0.2991453, 0.34831464), 0.0, 0.0, 0, 0, Vector2(0.42735043, 0.6516854), 0.0, 0.0, 0, 0, Vector2(0.5854701, 0.1685394), 0.0, 0.0, 0, 0, Vector2(0.71794873, 0.4044944), 0.0, 0.0, 0, 0, Vector2(0.8632479, 0.06741583), 0.0, 0.0, 0, 0, Vector2(1, 0.34831464), 0.0, 0.0, 0, 0]
-point_count = 8
+_data = [Vector2(0, 0.48314613), 0.0, 5.4870543, 0, 0, Vector2(0.13247865, 0.97752815), 0.0, 0.0, 0, 0, Vector2(0.24786326, 0.41573036), 0.0, 0.0, 0, 0, Vector2(0.3547009, 0.79775286), 0.0, 0.0, 0, 0, Vector2(0.474359, 0.28089893), 0.0, 0.0, 0, 0, Vector2(0.5897436, 0.6067416), 0.0, 0.0, 0, 0, Vector2(0.67948717, 0.1460675), 0.0, 0.0, 0, 0, Vector2(0.81623936, 0.49438208), 0.0, 0.0, 0, 0, Vector2(0.8803419, 0.1685394), 0.0, 0.0, 0, 0, Vector2(1, 0.46067423), 0.0, 0.0, 0, 0]
+point_count = 10
 
 [sub_resource type="CurveTexture" id="CurveTexture_p1ia5"]
 curve = SubResource("Curve_jyicm")
@@ -69,7 +69,7 @@ texture = ExtResource("2")
 position = Vector2(1, -18)
 amount = 32
 texture = ExtResource("3_kvxsf")
-lifetime = 6.0
+lifetime = 5.0
 speed_scale = 5.0
 randomness = 0.7
 collision_base_size = 0.0
