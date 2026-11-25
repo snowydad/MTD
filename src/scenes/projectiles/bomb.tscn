@@ -76,16 +76,3 @@ collision_base_size = 0.0
 draw_order = 0
 trail_sections = 4
 process_material = SubResource("ParticleProcessMaterial_8xuct")
-
-[node name="GPUParticles2D2" type="GPUParticles2D" parent="." unique_id=766185276]
-visible = false
-position = Vector2(2, -36)
-amount = 32
-texture = ExtResource("3_kvxsf")
-lifetime = 6.0
-speed_scale = 5.0
-randomness = 0.7
-collision_base_size = 0.0
-draw_order = 0
-trail_sections = 4
-process_material = SubResource("ParticleProcessMaterial_8xuct")

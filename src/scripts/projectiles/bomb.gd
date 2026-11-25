@@ -57,7 +57,7 @@ func launch(from_global: Vector2, target: Enemy, p_dhp: float = 0.0, p_mhp: floa
 	_apply_level_look()
 	if trail != null:
 		trail.emitting = true
-		# local_coords: направление/офсет эмиттера в пространстве бомбы → крутятся вместе
+		# local_coords: false - not to drug particles
 		trail.local_coords = false
 
 	_to = _aim(from_global, target, 0.7)

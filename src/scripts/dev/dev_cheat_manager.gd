@@ -34,7 +34,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		KEY_3:
 			Engine.time_scale = 0.25
-			print("DEV: speed x2")
+			print("DEV: speed x0.25")
 			get_viewport().set_input_as_handled()
 		KEY_BRACKETLEFT:
 			_add_energy(-ENERGY_STEP)

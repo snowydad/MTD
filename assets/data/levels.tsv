@@ -14,11 +14,12 @@ level	wave	subwave	type	delay	count	interval	spawn_x_min	spawn_x_max
 3	2	2.1	goblin_mage	2	3	6	200	900
 3	2	2.2	goblin_swift	5	3	4	200	900
 4	1	1.1	goblin	0	1	3	500	600
-4	1	1.1	goblin_swift	10	3	3	500	600
+4	1	1.1	goblin_swift	10	4	3	500	600
 4	1	1.2	goblin	18	6	1	200	900
 4	2	2.1	goblin_armor	0	4	5	400	700
-4	2	2.2	goblin_swift	1	5	4	800	1000
-4	2	2.3	goblin_swift	1	5	4	100	300
+4	2	2.4	orc	4	7	2	200	900
+4	2	2.2	goblin_swift	1	6	4	800	1000
+4	2	2.3	goblin_swift	1	6	4	100	300
 5	1	1.1	goblin	2	3	6	460	660
 5	1	1.3	orc	18	2	11	360	960
 5	2	2.1	goblin	0	6	3	360	960
