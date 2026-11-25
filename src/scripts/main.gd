@@ -91,6 +91,10 @@ var _base_tower_max_hp: float = 100.0
 @export var hp_perk_chance: float = 0.5
 ## Текущие 3 предложения на панели
 var _perk_offers: Array[String] = []
+## Крестик «пропустить перк» (под панелью, через 0.5с реального времени).
+var _btn_perk_skip: Button = null
+var _perk_skip_gen: int = 0
+@export var perk_skip_delay: float = 0.5
 const PERK_POOL_BASE: Array[String] = [
 	"range", "damage", "speed", "accuracy", "energy", "gold",
 ]
@@ -142,6 +146,7 @@ func _ready() -> void:
 	btn_perk_range.pressed.connect(_on_perk_slot.bind(0))
 	btn_perk_speed.pressed.connect(_on_perk_slot.bind(1))
 	btn_perk_damage.pressed.connect(_on_perk_slot.bind(2))
+	_ensure_perk_skip_button()
 
 	if wave_manager:
 		wave_manager.field_x_min = field_x_min
@@ -211,8 +216,8 @@ func _update_hp_bar() -> void:
 
 	var ratio := tower_hp / tower_max_hp if tower_max_hp > 0.0 else 0.0
 	var fill_style := StyleBoxFlat.new()
-	fill_style.bg_color = Color(0.2, 0.85, 0.3) if ratio > 0.5 \
-		else (Color(0.95, 0.75, 0.15) if ratio > 0.25 else Color(0.9, 0.2, 0.2))
+	fill_style.bg_color = Color(0.187, 0.756, 0.27, 1.0) if ratio > 0.5 \
+		else (Color(0.883, 0.693, 0.098, 1.0) if ratio > 0.25 else Color(0.792, 0.153, 0.159, 1.0))
 	fill_style.set_corner_radius_all(6)
 	tower_hp_bar.add_theme_stylebox_override("fill", fill_style)
 
@@ -335,6 +340,7 @@ func _try_show_perks() -> void:
 	_time_scale_before_perk = Engine.time_scale
 	Engine.time_scale = maxf(perk_slowdown, 0.05)
 	print("Perk panel: time_scale ", Engine.time_scale)
+	_schedule_perk_skip_button()
 
 
 func _on_perk_slot(slot: int) -> void:
@@ -386,7 +392,58 @@ func _hide_perks() -> void:
 	_perk_panel_open = false
 	perk_panel.visible = false
 	_perk_offers.clear()
+	_perk_skip_gen += 1
+	if _btn_perk_skip != null:
+		_btn_perk_skip.visible = false
 	Engine.time_scale = _time_scale_before_perk if _time_scale_before_perk > 0.0 else 1.0
+
+
+func _ensure_perk_skip_button() -> void:
+	if _btn_perk_skip != null and is_instance_valid(_btn_perk_skip):
+		return
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null:
+		return
+	var btn := Button.new()
+	btn.name = "BtnPerkSkip"
+	btn.text = "✕"
+	btn.visible = false
+	btn.custom_minimum_size = Vector2(96, 96)
+	btn.add_theme_font_size_override("font_size", 52)
+	btn.set_anchors_preset(Control.PRESET_CENTER)
+	# Под панелью перков (панель ~ offset_bottom 100 от центра)
+	btn.offset_left = -48.0
+	btn.offset_right = 48.0
+	btn.offset_top = 130.0
+	btn.offset_bottom = 226.0
+	btn.pressed.connect(_on_perk_skip)
+	hud.add_child(btn)
+	_btn_perk_skip = btn
+
+
+func _schedule_perk_skip_button() -> void:
+	_ensure_perk_skip_button()
+	if _btn_perk_skip != null:
+		_btn_perk_skip.visible = false
+	_perk_skip_gen += 1
+	var gen := _perk_skip_gen
+	# 1с реального времени (ignore_time_scale), даже при slow-mo перков
+	var t := get_tree().create_timer(perk_skip_delay, true, true)
+	await t.timeout
+	if gen != _perk_skip_gen:
+		return
+	if not _perk_panel_open or _game_over:
+		return
+	if _btn_perk_skip != null:
+		_btn_perk_skip.visible = true
+
+
+func _on_perk_skip() -> void:
+	## Отказ от перка: золото не тратим, панель закрываем.
+	if not _perk_panel_open:
+		return
+	print("PERK skipped")
+	_hide_perks()
 
 
 func _refresh_all_unit_stats() -> void:
