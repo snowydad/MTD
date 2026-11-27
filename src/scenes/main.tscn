@@ -10,52 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://cgoblin001" path="res://src/scenes/enemies/goblin.tscn" id="5_goblin"]
 [ext_resource type="PackedScene" uid="uid://cmscuvrq2lmfw" path="res://src/scenes/enemies/goblin_swift.tscn" id="5_swift"]
 [ext_resource type="PackedScene" uid="uid://corc001" path="res://src/scenes/enemies/orc.tscn" id="6_orc"]
-[ext_resource type="Texture2D" uid="uid://b73cx7iyo4gaa" path="res://assets/sprites/fx/spark.png" id="11_24j03"]
-
-[sub_resource type="Gradient" id="Gradient_24j03"]
-colors = PackedColorArray(1, 1, 1, 1, 1, 0.19607843, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_kbdt0"]
-gradient = SubResource("Gradient_24j03")
-
-[sub_resource type="Curve" id="Curve_p1ia5"]
-_data = [Vector2(0, 0.48314613), 0.0, 5.4870543, 0, 0, Vector2(0.1837607, 1), 0.0, 0.0, 0, 0, Vector2(0.3760684, 0.32584274), 0.0, 0.0, 0, 0, Vector2(0.51282054, 0.6067416), 0.0, 0.0, 0, 0, Vector2(0.6752137, 0.15730345), 0.0, 0.0, 0, 0, Vector2(0.7606838, 0.3370787), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 7
-
-[sub_resource type="CurveTexture" id="CurveTexture_p1ia5"]
-curve = SubResource("Curve_p1ia5")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_j07er"]
-particle_flag_disable_z = true
-particle_flag_damping_as_friction = true
-particle_flag_inherit_emitter_scale = true
-angle_min = -44.99999
-angle_max = 45.00001
-direction = Vector3(0, -1, 0)
-spread = 66.0
-flatness = 0.414
-initial_velocity_min = 90.439995
-initial_velocity_max = 140.44
-angular_velocity_min = -33.000015
-angular_velocity_max = 32.999985
-orbit_velocity_min = 9.49949e-08
-orbit_velocity_max = 9.49949e-08
-radial_velocity_min = -2.2351742e-05
-radial_velocity_max = -2.2351742e-05
-gravity = Vector3(0, 46, 0)
-linear_accel_min = -2.2351742e-06
-linear_accel_max = -2.2351742e-06
-radial_accel_min = -2.2351742e-06
-radial_accel_max = -2.2351742e-06
-tangential_accel_min = -2.2351742e-06
-tangential_accel_max = -2.2351742e-06
-damping_max = 10.0
-scale_min = 0.19999999
-scale_max = 0.5
-scale_curve = SubResource("CurveTexture_p1ia5")
-color_ramp = SubResource("GradientTexture1D_kbdt0")
-hue_variation_min = -2.2351742e-08
-hue_variation_max = 0.049999975
 
 [node name="Main" type="Node2D" unique_id=597057756]
 script = ExtResource("1_main")
@@ -209,10 +163,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -279.5
-offset_top = -360.0
-offset_right = 280.5
-offset_bottom = -290.0
+offset_left = -350.5
+offset_top = -326.0
+offset_right = 349.5
+offset_bottom = -286.0
 grow_horizontal = 2
 grow_vertical = 0
 value = 100.0
@@ -225,10 +179,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -280.0
-offset_top = -360.0
-offset_right = 280.0
-offset_bottom = -290.0
+offset_left = -287.5
+offset_top = -330.0
+offset_right = 272.5
+offset_bottom = -280.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -237,15 +191,3 @@ theme_override_font_sizes/font_size = 28
 text = "100 / 100"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="GPUParticles2D" type="GPUParticles2D" parent="." unique_id=924306763]
-position = Vector2(510, 783)
-amount = 16
-texture = ExtResource("11_24j03")
-lifetime = 2.0
-speed_scale = 5.0
-randomness = 0.7
-collision_base_size = 0.0
-draw_order = 0
-trail_sections = 4
-process_material = SubResource("ParticleProcessMaterial_j07er")

@@ -69,10 +69,18 @@ var _merges_in_flight: int = 0
 var _perk_panel_open: bool = false
 var _time_scale_before_perk: float = 1.0
 
-## Перки: 3 из 7, шаг за золото. Шаг — economy.tsv perk_bonus.
-var perk_cost: int = 50
+## Перки: 3 из 7. Прогресс к перку — абсолютный счётчик / порог.
+## Ступени цены: base, base+step, base+2*step… (50, 55, 60…).
+## Skip: порог += следующая ступень. Buy: gold -= цена ступени, порог += step.
+var perk_cost_base: int = 50
 var perk_cost_step: int = 5
 var perk_bonus: float = 0.10
+## Индекс текущего оффера (0 → цена 50, 1 → 55…).
+var perk_offer_index: int = 0
+## Абсолютный прогресс к перку (источник позже; пока = награды с киллов).
+var perk_progress: int = 0
+## Абсолютный порог показа оффера.
+var perk_threshold: int = 50
 var perk_damage: float = 1.0
 var perk_range: float = 1.0
 var perk_speed: float = 1.0
@@ -91,10 +99,11 @@ var _base_tower_max_hp: float = 100.0
 @export var hp_perk_chance: float = 0.5
 ## Текущие 3 предложения на панели
 var _perk_offers: Array[String] = []
-## Крестик «пропустить перк» (под панелью, через 0.5с реального времени).
+## Крестик «пропустить перк» (под панелью, через 1с реального времени).
 var _btn_perk_skip: Button = null
 var _perk_skip_gen: int = 0
-@export var perk_skip_delay: float = 0.5
+@export var perk_skip_delay: float = 1.0
+var _perk_progress_label: Label = null
 const PERK_POOL_BASE: Array[String] = [
 	"range", "damage", "speed", "accuracy", "energy", "gold",
 ]
@@ -114,9 +123,12 @@ func _ready() -> void:
 		WaveData.set_level(int(pd.selected_level))
 	_level_id = maxi(WaveData.current_level(), 1)
 	WaveData.set_level(_level_id)
-	perk_cost = GameData.perk_cost_base()
+	perk_cost_base = GameData.perk_cost_base()
 	perk_cost_step = GameData.perk_cost_step()
 	perk_bonus = GameData.perk_bonus()
+	perk_offer_index = 0
+	perk_progress = 0
+	perk_threshold = _perk_segment(0)
 	cost_step = GameData.unit_cost_step()
 	cost_base_archer = GameData.unit_cost_base("archer")
 	cost_base_mage = GameData.unit_cost_base("mage")
@@ -129,6 +141,8 @@ func _ready() -> void:
 	_setup_hp_bar()
 	_update_hp_bar()
 	_update_gold_label()
+	_ensure_perk_progress_label()
+	_update_perk_progress_label()
 	_ensure_victory_panel()
 	_ensure_game_over_panel()
 	_ensure_pause_panel()
@@ -216,8 +230,8 @@ func _update_hp_bar() -> void:
 
 	var ratio := tower_hp / tower_max_hp if tower_max_hp > 0.0 else 0.0
 	var fill_style := StyleBoxFlat.new()
-	fill_style.bg_color = Color(0.187, 0.756, 0.27, 1.0) if ratio > 0.5 \
-		else (Color(0.883, 0.693, 0.098, 1.0) if ratio > 0.25 else Color(0.792, 0.153, 0.159, 1.0))
+	fill_style.bg_color = Color(0.2, 0.85, 0.3) if ratio > 0.5 \
+		else (Color(0.95, 0.75, 0.15) if ratio > 0.25 else Color(0.9, 0.2, 0.2))
 	fill_style.set_corner_radius_all(6)
 	tower_hp_bar.add_theme_stylebox_override("fill", fill_style)
 
@@ -269,14 +283,53 @@ func _on_enemy_spawned_for_damage(node: Node) -> void:
 func _on_enemy_died(enemy: Enemy) -> void:
 	if _game_over or enemy == null:
 		return
-	gold += int(round(float(enemy.gold_reward) * perk_gold))
+	var gained := int(round(float(enemy.gold_reward) * perk_gold))
+	gold += gained
+	## Пока источник прогресса = награды с киллов (позже заменим).
+	perk_progress += gained
 	_update_gold_label()
+	_update_perk_progress_label()
 	_try_show_perks()
 
 
 func _update_gold_label() -> void:
 	if gold_label:
 		gold_label.text = str(gold)
+
+
+func _perk_segment(index: int) -> int:
+	## Цена/размер ступени: base + index * step (50, 55, 60…).
+	return perk_cost_base + maxi(index, 0) * perk_cost_step
+
+
+func _perk_price() -> int:
+	return _perk_segment(perk_offer_index)
+
+
+func _ensure_perk_progress_label() -> void:
+	if _perk_progress_label != null and is_instance_valid(_perk_progress_label):
+		return
+	var hud := get_node_or_null("UI/HUD") as Control
+	if hud == null:
+		return
+	var lb := Label.new()
+	lb.name = "PerkProgressLabel"
+	lb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lb.add_theme_font_size_override("font_size", 36)
+	lb.add_theme_color_override("font_color", Color(0.75, 0.9, 1.0, 1.0))
+	lb.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	lb.add_theme_constant_override("outline_size", 5)
+	lb.position = Vector2(24, 100)
+	lb.size = Vector2(400, 48)
+	hud.add_child(lb)
+	_perk_progress_label = lb
+
+
+func _update_perk_progress_label() -> void:
+	_ensure_perk_progress_label()
+	if _perk_progress_label == null:
+		return
+	_perk_progress_label.text = "%d/%d" % [perk_progress, perk_threshold]
 
 
 func get_perk_multipliers() -> Dictionary:
@@ -318,20 +371,23 @@ func _roll_perk_offers() -> void:
 
 func _apply_perk_labels() -> void:
 	var pct := int(round(perk_bonus * 100.0))
+	var price := _perk_price()
 	var btns: Array[Button] = [btn_perk_range, btn_perk_speed, btn_perk_damage]
 	for i in range(3):
 		var kind := _perk_offers[i] if i < _perk_offers.size() else "range"
 		if kind == "hp":
-			btns[i].text = "%s\n+%d\n%d" % [_perk_title(kind), int(hp_perk_amount), perk_cost]
+			btns[i].text = "%s\n+%d\n%d" % [_perk_title(kind), int(hp_perk_amount), price]
 		else:
-			btns[i].text = "%s\n+%d%%\n%d" % [_perk_title(kind), pct, perk_cost]
+			btns[i].text = "%s\n+%d%%\n%d" % [_perk_title(kind), pct, price]
 
 
 func _try_show_perks() -> void:
-	## После убийства, если хватает золота. После выбора — только со следующего килла.
+	## Показ когда абсолютный прогресс дошёл до порога (и хватает gold на цену ступени).
 	if _game_over or _perk_panel_open:
 		return
-	if gold < perk_cost:
+	if perk_progress < perk_threshold:
+		return
+	if gold < _perk_price():
 		return
 	_roll_perk_offers()
 	_apply_perk_labels()
@@ -339,7 +395,7 @@ func _try_show_perks() -> void:
 	perk_panel.visible = true
 	_time_scale_before_perk = Engine.time_scale
 	Engine.time_scale = maxf(perk_slowdown, 0.05)
-	print("Perk panel: time_scale ", Engine.time_scale)
+	print("Perk panel: progress ", perk_progress, "/", perk_threshold, " price=", _perk_price())
 	_schedule_perk_skip_button()
 
 
@@ -351,10 +407,11 @@ func _on_perk_slot(slot: int) -> void:
 
 
 func _on_perk_chosen(kind: String) -> void:
-	if gold < perk_cost:
+	var price := _perk_price()
+	if gold < price:
 		_hide_perks()
 		return
-	gold -= perk_cost
+	gold -= price
 	_update_gold_label()
 
 	var b := 1.0 + perk_bonus
@@ -380,10 +437,14 @@ func _on_perk_chosen(kind: String) -> void:
 		"gold":
 			perk_gold *= b
 
-	perk_cost += perk_cost_step
-	print("PERK ", kind, " x", b, " cost_next=", perk_cost,
+	## После покупки: индекс++, порог += step (не вся следующая ступень).
+	perk_offer_index += 1
+	perk_threshold += perk_cost_step
+	print("PERK ", kind, " x", b, " price=", price, " next_threshold=", perk_threshold,
+		" next_price=", _perk_price(),
 		" dmg=", perk_damage, " range=", perk_range, " spd=", perk_speed,
-		" acc=", perk_accuracy, " gold=", perk_gold, " energy=", fill_rate, " hp_max=", tower_max_hp)
+		" acc=", perk_accuracy, " gold_mul=", perk_gold, " energy=", fill_rate, " hp_max=", tower_max_hp)
+	_update_perk_progress_label()
 	_refresh_all_unit_stats()
 	_hide_perks()
 
@@ -439,10 +500,13 @@ func _schedule_perk_skip_button() -> void:
 
 
 func _on_perk_skip() -> void:
-	## Отказ от перка: золото не тратим, панель закрываем.
+	## Отказ: gold не тратим. Индекс++, порог += размер новой ступени (50+55, +60…).
 	if not _perk_panel_open:
 		return
-	print("PERK skipped")
+	perk_offer_index += 1
+	perk_threshold += _perk_segment(perk_offer_index)
+	print("PERK skipped; threshold → ", perk_threshold, " progress=", perk_progress, " next_price=", _perk_price())
+	_update_perk_progress_label()
 	_hide_perks()
 
 
